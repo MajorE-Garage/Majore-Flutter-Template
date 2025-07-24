@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-import '../../features/shared/components/overlays/app_toast_widget.dart';
+import '../../core/presentation/ui_components/overlays/app_toast_widget.dart';
 
 mixin DeviceClipboardMixin {
   void copyToClipboard(String text, {String? feedbackMessage}) {

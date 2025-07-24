@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../core/presentation/theming/app_theme_manager.dart';
@@ -11,6 +12,7 @@ void main() {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+      Firebase.initializeApp();
       await ServiceLocator.registerDependencies();
       await AppThemeManager.initialise();
       runApp(const ThisApplication());

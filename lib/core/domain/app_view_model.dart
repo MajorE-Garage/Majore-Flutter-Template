@@ -2,10 +2,9 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 
-import '../service_locator/service_locator.dart';
+import '../presentation/ui_components/overlays/app_toast_widget.dart';
 import 'app_responses.dart';
 import 'failure.dart';
-import 'session_manager.dart';
 
 enum VmState { none, busy, error, noConnection }
 

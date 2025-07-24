@@ -1,5 +1,5 @@
 import '../../core/presentation/navigation/app_navigator.dart';
-import '../../features/shared/components/overlays/app_toast_widget.dart';
+import '../../core/presentation/ui_components/overlays/app_toast_widget.dart';
 import '../../main/environment_config.dart';
 
 mixin CustomWillPopScopeMixin {
@@ -18,6 +18,6 @@ mixin CustomWillPopScopeMixin {
 
   void delayAndPop(bool didPop, _) async {
     AppToast.info('Closing ${EnvironmentConfig.appName}').show();
-     Future.delayed(secondTapDurationSpace, () => AppNavigator.main.pop());
+    Future.delayed(secondTapDurationSpace, () => AppNavigator.main.pop());
   }
 }

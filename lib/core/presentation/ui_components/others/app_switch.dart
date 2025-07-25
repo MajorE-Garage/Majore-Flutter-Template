@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class AppSwitch extends StatelessWidget {
   final bool active;

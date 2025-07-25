@@ -30,7 +30,7 @@ class _ThisApplicationState extends State<ThisApplication> with CustomWillPopSco
 
   @override
   Widget build(BuildContext context) {
-    return AppViewBuilder<AppThemeManager>(
+    return AppView<AppThemeManager>(
       model: AppThemeManager(
         lightTheme: AppTheme(
           colors: AppColors.defaultColors,

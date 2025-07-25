@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_button_widget.dart';
+import '../../presentation.dart';
 
 class EmptyStateWidget extends StatelessWidget {
   const EmptyStateWidget({

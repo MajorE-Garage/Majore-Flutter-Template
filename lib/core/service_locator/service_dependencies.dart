@@ -14,7 +14,9 @@ import '../../services/local_storage_service/local_storage_service.dart';
 import '../../services/rest_network_service/dio_network_service.dart';
 import '../../services/rest_network_service/rest_network_service.dart';
 import '../../utilities/constants/constants.dart';
+import '../domain/app_view_model.dart';
 import '../domain/session_manager.dart';
+import '../presentation/ui_components/overlays/app_toast_widget.dart';
 import 'service_locator.dart';
 
 class ServiceDependencies extends ServiceLocator {
@@ -29,6 +31,8 @@ class ServiceDependencies extends ServiceLocator {
         analyticsService: locator(),
       ),
     );
+
+    locator.registerLazySingleton<MessageDisplayHandler>(() => ToastErrorHandler());
 
     locator.registerFactory<LocalStorageService>(
       () => FlutterSecureLocalStorage(flutterSecureStorage: const FlutterSecureStorage()),

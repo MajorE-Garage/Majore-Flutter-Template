@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class AppTabBar extends StatelessWidget {
   const AppTabBar({super.key, this.controller, required this.tabs});

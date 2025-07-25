@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class ProfilePictureWidget extends StatelessWidget {
   const ProfilePictureWidget({super.key, this.image, this.size = 48, this.borderWidth});

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../inputs/app_text_field.dart';
-import 'app_bottom_sheet.dart';
+import '../../presentation.dart';
 
 class SearchableListSheet<T> extends AppBottomSheet<T> {
   SearchableListSheet({

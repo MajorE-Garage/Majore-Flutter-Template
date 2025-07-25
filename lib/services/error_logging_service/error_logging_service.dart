@@ -32,25 +32,18 @@ class ErrorLogService {
     };
 
     // Connect severe log events
-    Logger.root.onRecord.listen(
-      (event) {
-        debugPrint(event.message);
-        if (event.level >= Level.SEVERE) {
-          recordError(
-            event.error,
-            event.stackTrace,
-            reason: event.message,
-            information: [event.loggerName, event.time],
-          );
-        }
-      },
-    );
+    Logger.root.onRecord.listen((event) {
+      if (kDebugMode) debugPrint(event.message);
+      if (event.level >= Level.SEVERE) {
+        recordError(event.error, event.stackTrace, reason: event.message, information: [event.loggerName, event.time]);
+      }
+    });
 
     // Connect errors on main isolate
     if (!kIsWeb) {
-      Isolate.current.addErrorListener(RawReceivePort(
-        (List<dynamic> pair) async => recordError(pair.first, pair.last),
-      ).sendPort);
+      Isolate.current.addErrorListener(
+        RawReceivePort((List<dynamic> pair) async => recordError(pair.first, pair.last)).sendPort,
+      );
     }
   }
 

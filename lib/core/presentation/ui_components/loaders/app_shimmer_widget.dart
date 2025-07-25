@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 /// This widget renders a rectangle shaped element and animates a gradient
 /// across its dimensions to give a shimmering effect.

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/theming/app_colors.dart';
+import '../../theming/app_colors.dart';
 import '../others/cached_picture_widget.dart';
 import 'app_bottom_sheet.dart';
 

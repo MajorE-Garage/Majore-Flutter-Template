@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
 import '../../../../services/analytics_service/analytics_service.dart';
-import '../loaders/app_loading_indicator.dart';
+import '../../presentation.dart';
 
 enum _ButtonType {
   primary,
@@ -150,7 +149,7 @@ class AppButton extends StatelessWidget {
 
           Color? getBorderColor(Set<WidgetState> states) {
             if (states.contains(WidgetState.pressed)) {
-              return tColor.withOpacity(0.8);
+              return tColor.withAlpha(204);
             }
             if (!_type.isSecondary) return null;
             if (states.contains(WidgetState.disabled)) {

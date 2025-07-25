@@ -47,7 +47,7 @@ class AppTheme extends Theme {
             selectionHandleColor: colors.primaryColor,
           ),
           dividerTheme: DividerThemeData(
-            color: colors.textColor.withOpacity(0.07),
+            color: colors.textColor.withAlpha(18),
             thickness: 1,
             space: 1,
           ),
@@ -84,7 +84,6 @@ class AppTheme extends Theme {
             onError: colors.attitudeErrorDark,
             brightness: Brightness.light,
           ),
-          dialogBackgroundColor: colors.backgroundColor,
           bottomSheetTheme: BottomSheetThemeData(
             backgroundColor: colors.backgroundColor,
             shape: const RoundedRectangleBorder(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/presentation/presentation.dart';
 import '../../../../utilities/mixins/device_clipboard_mixin.dart';
+import '../../presentation.dart';
 
 class AppPinField extends StatefulWidget {
   final int count;

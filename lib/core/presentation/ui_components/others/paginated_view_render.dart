@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../presentation.dart';
-import '../buttons/app_button_widget.dart';
-import '../loaders/app_loading_indicator.dart';
 
 class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends StatelessWidget {
   PaginatedViewRender({

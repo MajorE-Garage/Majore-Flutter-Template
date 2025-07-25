@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_button_widget.dart';
-import 'app_dialog.dart';
+import '../../presentation.dart';
 
 // May be converted to a Sheet rather than a sheet,
 // depending on design decision

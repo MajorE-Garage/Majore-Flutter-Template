@@ -18,16 +18,11 @@ class AppDialog<T> extends StatelessWidget {
   final bool isDismissable;
   final VoidCallback? dismissCallback;
 
-  Future<T?> show({
-    BuildContext? context,
-    String? routeName,
-  }) async {
+  Future<T?> show({BuildContext? context, String? routeName}) async {
     final ctx = context ?? AppNavigator.main.currentContext;
-    final value = await AppNavigator.of(ctx).openDialog<T>(
-      dialog: this,
-      barrierDismissable: isDismissable,
-      routeName: routeName,
-    );
+    final value = await AppNavigator.of(
+      ctx,
+    ).openDialog<T>(dialog: this, barrierDismissable: isDismissable, routeName: routeName);
     return value;
   }
 
@@ -41,10 +36,7 @@ class AppDialog<T> extends StatelessWidget {
         }
       },
       child: Dialog(
-        insetPadding: MediaQuery.of(context).viewInsets.copyWith(
-              left: 24,
-              right: 24,
-            ),
+        insetPadding: MediaQuery.of(context).viewInsets.copyWith(left: 24, right: 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -59,7 +51,7 @@ class AppDialog<T> extends StatelessWidget {
                         textAlign: TextAlign.start,
                         style: AppStyles.of(context).body16SemiBold,
                       ),
-                    )
+                    ),
                   // else
                   //   const Spacer(),
                   // if (isDismissable)
@@ -73,11 +65,8 @@ class AppDialog<T> extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Flexible(
-              child: SingleChildScrollView(
-                padding: this.padding,
-                child: builder(context),
-              ),
-            )
+              child: SingleChildScrollView(padding: this.padding, child: builder(context)),
+            ),
           ],
         ),
       ),

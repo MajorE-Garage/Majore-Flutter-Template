@@ -25,11 +25,7 @@ class FormDataRequest extends JsonRequest {
     Map<String, dynamic>? otherData,
     super.queryParams,
     super.useToken = true,
-  }) : super(
-          POST,
-          endpoint: endpoint,
-          body: otherData ?? const {},
-        );
+  }) : super(POST, endpoint: endpoint, body: otherData ?? const {});
 
   FormDataRequest.patch(
     String endpoint,
@@ -37,11 +33,7 @@ class FormDataRequest extends JsonRequest {
     Map<String, dynamic>? otherData,
     super.queryParams,
     super.useToken = true,
-  }) : super(
-          PATCH,
-          endpoint: endpoint,
-          body: otherData ?? const {},
-        );
+  }) : super(PATCH, endpoint: endpoint, body: otherData ?? const {});
 
   FormDataRequest.put(
     String endpoint,
@@ -49,11 +41,7 @@ class FormDataRequest extends JsonRequest {
     Map<String, dynamic>? otherData,
     super.queryParams,
     super.useToken = true,
-  }) : super(
-          PUT,
-          endpoint: endpoint,
-          body: otherData ?? const {},
-        );
+  }) : super(PUT, endpoint: endpoint, body: otherData ?? const {});
 
   FormDataRequest.delete(
     String endpoint,
@@ -61,28 +49,15 @@ class FormDataRequest extends JsonRequest {
     Map<String, dynamic>? otherData,
     super.queryParams,
     super.useToken = true,
-  }) : super(
-          DELETE,
-          endpoint: endpoint,
-          body: otherData ?? const {},
-        );
+  }) : super(DELETE, endpoint: endpoint, body: otherData ?? const {});
 
-  FormDataRequest.get(
-    String endpoint, {
-    super.queryParams,
-    super.useToken = true,
-  })  : files = const {},
-        super(
-          DELETE,
-          endpoint: endpoint,
-          body: const {},
-        );
+  FormDataRequest.get(String endpoint, {super.queryParams, super.useToken = true})
+    : files = const {},
+      super(DELETE, endpoint: endpoint, body: const {});
 
   @override
   bool operator ==(other) =>
-      other is FormDataRequest &&
-      endpoint == other.endpoint &&
-      method == other.method;
+      other is FormDataRequest && endpoint == other.endpoint && method == other.method;
 
   @override
   int get hashCode => endpoint.hashCode;

@@ -71,7 +71,11 @@ class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends Statel
           : EmptyStateWidget(
               mainText: vm.lastFailure?.message.trim() ?? 'Something went wrong',
               illustrationSize: 48,
-              illustration: Icon(Icons.warning_rounded, color: AppColors.of(context).grey700, size: 48),
+              illustration: Icon(
+                Icons.warning_rounded,
+                color: AppColors.of(context).grey700,
+                size: 48,
+              ),
               button: AppButton.text(label: 'Retry', onPressed: vm.refresh, view: E),
             );
     } else {

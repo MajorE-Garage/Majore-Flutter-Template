@@ -21,9 +21,7 @@ class AppNavigatorObserver extends NavigatorObserver {
 
   @override
   void didPop(Route route, Route? previousRoute) {
-    debugPrint(
-      'Did Pop from ${route.settings.name} to ${previousRoute?.settings.name}',
-    );
+    debugPrint('Did Pop from ${route.settings.name} to ${previousRoute?.settings.name}');
     assert(_stack.last == route);
     _stack.removeLast();
     assert(_stack.isEmpty || _stack.last == previousRoute);
@@ -46,18 +44,14 @@ class AppNavigatorObserver extends NavigatorObserver {
 
   @override
   void didReplace({Route? newRoute, Route? oldRoute}) {
-    debugPrint(
-      'Did Replace ${oldRoute?.settings.name} with ${newRoute?.settings.name}',
-    );
+    debugPrint('Did Replace ${oldRoute?.settings.name} with ${newRoute?.settings.name}');
     _stack.remove(oldRoute);
     if (newRoute != null) _stack.add(newRoute);
   }
 
   @override
   void didRemove(Route route, Route? previousRoute) {
-    debugPrint(
-      'Did Remove ${route.settings.name}',
-    );
+    debugPrint('Did Remove ${route.settings.name}');
     _stack.remove(route);
   }
 }

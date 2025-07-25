@@ -1,4 +1,3 @@
-
 class EnvironmentConfig {
   // App Info
   static const isProd = bool.fromEnvironment('IS_PROD');

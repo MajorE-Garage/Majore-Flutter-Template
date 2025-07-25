@@ -9,6 +9,8 @@ mixin class ShareDirectMixin {
 
   Future<void> shareFiles(List<File> files, [String? message]) {
     assert(files.isNotEmpty);
-    return SharePlus.instance.share(ShareParams(files: files.map((e) => XFile(e.path)).toList(), subject: message));
+    return SharePlus.instance.share(
+      ShareParams(files: files.map((e) => XFile(e.path)).toList(), subject: message),
+    );
   }
 }

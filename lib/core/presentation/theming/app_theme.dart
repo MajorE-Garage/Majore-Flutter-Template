@@ -23,23 +23,16 @@ class AppTheme extends Theme {
     return theme;
   }
 
-  AppTheme.raw({
-    super.key,
-    required this.colors,
-    required this.styles,
-    required super.child,
-  }) : super(
-            data: ThemeData(
+  AppTheme.raw({super.key, required this.colors, required this.styles, required super.child})
+    : super(
+        data: ThemeData(
           fontFamily: styles.bodyFontFamily,
           scaffoldBackgroundColor: colors.backgroundColor,
           primaryColor: colors.primaryColor,
           appBarTheme: AppBarTheme(backgroundColor: colors.primaryColor),
           splashColor: colors.secondaryColor,
           extensions: [colors, styles],
-          textTheme: TextTheme(
-            bodySmall: styles.body14Regular,
-            titleSmall: styles.body14Medium,
-          ),
+          textTheme: TextTheme(bodySmall: styles.body14Regular, titleSmall: styles.body14Medium),
           canvasColor: colors.backgroundColor,
           textSelectionTheme: TextSelectionThemeData(
             cursorColor: colors.grey800,
@@ -65,14 +58,10 @@ class AppTheme extends Theme {
             backgroundColor: colors.backgroundColor,
             // elevation: 4,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(
-                Radius.circular(10),
-              ),
+              borderRadius: BorderRadius.all(Radius.circular(10)),
             ),
           ),
-          datePickerTheme: DatePickerThemeData(
-            yearStyle: styles.body14Regular,
-          ),
+          datePickerTheme: DatePickerThemeData(yearStyle: styles.body14Regular),
           colorScheme: ColorScheme(
             primary: colors.primaryColor,
             onPrimary: colors.backgroundColor,
@@ -87,12 +76,11 @@ class AppTheme extends Theme {
           bottomSheetTheme: BottomSheetThemeData(
             backgroundColor: colors.backgroundColor,
             shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(32),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
             ),
           ),
-        ));
+        ),
+      );
 
   static AppTheme of(BuildContext context) {
     final theme = context.findAncestorWidgetOfExactType<AppTheme>();

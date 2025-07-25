@@ -2,10 +2,7 @@ class DeviceInfoModel {
   final String deviceBrand;
   final String deviceModel;
 
-  DeviceInfoModel({
-    required this.deviceBrand,
-    required this.deviceModel,
-  });
+  DeviceInfoModel({required this.deviceBrand, required this.deviceModel});
 }
 
 class AppInfoModel {
@@ -13,11 +10,7 @@ class AppInfoModel {
   final String versionNumber;
   final String packageName;
 
-  AppInfoModel({
-    required this.packageName,
-    required this.buildNumber,
-    required this.versionNumber,
-  });
+  AppInfoModel({required this.packageName, required this.buildNumber, required this.versionNumber});
 }
 
 class LocaleInfoModel {
@@ -25,9 +18,5 @@ class LocaleInfoModel {
   final String countryCode;
   final String timezone;
 
-  LocaleInfoModel({
-    required this.languageCode,
-    required this.countryCode,
-    required this.timezone,
-  });
+  LocaleInfoModel({required this.languageCode, required this.countryCode, required this.timezone});
 }

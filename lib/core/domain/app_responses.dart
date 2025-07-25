@@ -8,8 +8,7 @@ class DataResponse<T> {
   bool get isSuccessful => data != null;
 
   DataResponse({this.data, this.error})
-      : assert((data != null) || (error != null),
-            'Must have one of data or error');
+    : assert((data != null) || (error != null), 'Must have one of data or error');
 }
 
 class StatusResponse {

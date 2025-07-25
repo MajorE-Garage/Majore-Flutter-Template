@@ -138,7 +138,8 @@ class AppView<T extends AppViewModel> extends StatefulWidget {
 /// functionality, which allows the widget to stay alive when it's not visible.
 ///
 /// [T] The type of the view model that extends [AppViewModel].
-class AppViewState<T extends AppViewModel> extends State<AppView<T>> with AutomaticKeepAliveClientMixin {
+class AppViewState<T extends AppViewModel> extends State<AppView<T>>
+    with AutomaticKeepAliveClientMixin {
   /// The view model instance that is provided to the builder function.
   ///
   /// This is initialized in the [initState] method and is used throughout
@@ -167,7 +168,9 @@ class AppViewState<T extends AppViewModel> extends State<AppView<T>> with Automa
         try {
           callback(model);
         } catch (e, t) {
-          Logger(widget.runtimeType.toString()).severe('Error in postFrameCallback of AppViewState', e, t);
+          Logger(
+            widget.runtimeType.toString(),
+          ).severe('Error in postFrameCallback of AppViewState', e, t);
         }
       });
     }

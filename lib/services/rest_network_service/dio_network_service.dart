@@ -24,12 +24,14 @@ class DioNetworkService extends RestNetworkService {
     required super.isProd,
     required super.sendTimeout,
     super.receiveTimeout,
-  }) : _dio = Dio(BaseOptions(
-          baseUrl: Uri.parse(baseUrl).toString(),
-          connectTimeout: sendTimeout,
-          sendTimeout: sendTimeout,
-          receiveTimeout: receiveTimeout ?? sendTimeout,
-        )) {
+  }) : _dio = Dio(
+         BaseOptions(
+           baseUrl: Uri.parse(baseUrl).toString(),
+           connectTimeout: sendTimeout,
+           sendTimeout: sendTimeout,
+           receiveTimeout: receiveTimeout ?? sendTimeout,
+         ),
+       ) {
     _dio.interceptors.addAll([
       if (!isProd || kDebugMode) NetworkLoggerInterceptor(),
       DataErrorInterceptor(),
@@ -40,19 +42,11 @@ class DioNetworkService extends RestNetworkService {
   Future<Json> sendFormDataRequest<T>(FormDataRequest request) async {
     // assert(initialized, 'This Network Service has not been initialized');
 
-    final files = request.files.map(
-      (key, file) {
-        final type = lookupMimeType(file.path);
-        final contentType = type != null ? MediaType.parse(type) : null;
-        return MapEntry(
-          key,
-          MultipartFile.fromFileSync(
-            file.path,
-            contentType: contentType,
-          ),
-        );
-      },
-    );
+    final files = request.files.map((key, file) {
+      final type = lookupMimeType(file.path);
+      final contentType = type != null ? MediaType.parse(type) : null;
+      return MapEntry(key, MultipartFile.fromFileSync(file.path, contentType: contentType));
+    });
     final otherData = request.body;
 
     final data = FormData.fromMap({...files, ...otherData});
@@ -129,26 +123,27 @@ class DataErrorInterceptor extends Interceptor {
       information: [err.response ?? '', err.requestOptions],
     );
     if (err.isNetworkError) {
-      handler.next(DioException(
-        requestOptions: err.requestOptions,
-        error: NetworkException(),
-      ));
+      handler.next(DioException(requestOptions: err.requestOptions, error: NetworkException()));
     } else if (err.isTimeoutError) {
-      handler.next(DioException(
-        requestOptions: err.requestOptions,
-        error: TimeoutException('Request Timed out. Try again'),
-      ));
+      handler.next(
+        DioException(
+          requestOptions: err.requestOptions,
+          error: TimeoutException('Request Timed out. Try again'),
+        ),
+      );
     } else if (err.isServerError || err.isUnauthorised) {
       String? message;
       if (err.response?.data is Map) {
         message = err.response?.data['message'];
       }
-      handler.next(DioException(
-        requestOptions: err.requestOptions,
-        error: err.isServerError
-            ? ServerException(errorMessage: message)
-            : UnauthorisedException(errorMessage: message ?? ''),
-      ));
+      handler.next(
+        DioException(
+          requestOptions: err.requestOptions,
+          error: err.isServerError
+              ? ServerException(errorMessage: message)
+              : UnauthorisedException(errorMessage: message ?? ''),
+        ),
+      );
     } else {
       Map json;
       if (err.response == null) {
@@ -158,36 +153,37 @@ class DataErrorInterceptor extends Interceptor {
       } else {
         json = jsonDecode(err.response!.data);
       }
-      handler.next(DioException(
-        requestOptions: err.requestOptions,
-        error: InputException(errorMessage: json['message']),
-      ));
+      handler.next(
+        DioException(
+          requestOptions: err.requestOptions,
+          error: InputException(errorMessage: json['message']),
+        ),
+      );
     }
   }
 }
 
 class NetworkLoggerInterceptor extends PrettyDioLogger {
   NetworkLoggerInterceptor()
-      : super(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-          maxWidth: 88,
-        );
+    : super(
+        requestHeader: true,
+        requestBody: true,
+        responseBody: true,
+        responseHeader: false,
+        error: true,
+        compact: true,
+        maxWidth: 88,
+      );
 }
 
 extension DioExceptionExtension on DioException {
   bool get isTimeoutError => [
-        DioExceptionType.sendTimeout,
-        DioExceptionType.receiveTimeout,
-        DioExceptionType.connectionTimeout,
-      ].contains(type);
+    DioExceptionType.sendTimeout,
+    DioExceptionType.receiveTimeout,
+    DioExceptionType.connectionTimeout,
+  ].contains(type);
 
-  bool get isNetworkError =>
-      error is SocketException || type == DioExceptionType.connectionError;
+  bool get isNetworkError => error is SocketException || type == DioExceptionType.connectionError;
 
   bool get isServerError => (response?.statusCode ?? 501) >= 500;
 

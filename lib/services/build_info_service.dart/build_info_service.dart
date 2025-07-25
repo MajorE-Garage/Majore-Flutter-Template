@@ -20,9 +20,7 @@ abstract class BuildInfoService {
 class BuildInfoServiceImpl implements BuildInfoService {
   final DeviceInfoPlugin deviceInfoPlugin;
 
-  BuildInfoServiceImpl({
-    required this.deviceInfoPlugin,
-  });
+  BuildInfoServiceImpl({required this.deviceInfoPlugin});
 
   DeviceInfoModel? _deviceInfo;
   AppInfoModel? _appInfo;
@@ -32,20 +30,17 @@ class BuildInfoServiceImpl implements BuildInfoService {
   Future<AppInfoModel> get appInfo async => _appInfo ??= await _fetchAppInfo();
 
   @override
-  Future<DeviceInfoModel> get deviceInfo async =>
-      _deviceInfo ??= await _fetchDeviceInfo();
+  Future<DeviceInfoModel> get deviceInfo async => _deviceInfo ??= await _fetchDeviceInfo();
 
   @override
-  Future<LocaleInfoModel> get localeInfo async =>
-      _localeInfo ??= await _fetchLocaleInfo();
+  Future<LocaleInfoModel> get localeInfo async => _localeInfo ??= await _fetchLocaleInfo();
 
   @override
   void promptUserToUpdate(BuildContext context, bool force) {
     try {
       // NativeUpdater.displayUpdateAlert(context, forceUpdate: force);
     } catch (e, s) {
-      Logger(runtimeType.toString())
-          .severe('Prompt for update ran into error', e, s);
+      Logger(runtimeType.toString()).severe('Prompt for update ran into error', e, s);
     }
   }
 
@@ -58,13 +53,13 @@ class BuildInfoServiceImpl implements BuildInfoService {
         deviceInfo = await _fetchAndroidInfo();
       } else {
         deviceInfo = DeviceInfoModel(
-            deviceBrand: Platform.operatingSystem,
-            deviceModel: Platform.operatingSystemVersion);
+          deviceBrand: Platform.operatingSystem,
+          deviceModel: Platform.operatingSystemVersion,
+        );
       }
       return deviceInfo;
     } catch (e, t) {
-      Logger(runtimeType.toString())
-          .severe('Device info fetch ran into error', e, t);
+      Logger(runtimeType.toString()).severe('Device info fetch ran into error', e, t);
       rethrow;
     }
   }
@@ -106,8 +101,7 @@ class BuildInfoServiceImpl implements BuildInfoService {
         versionNumber: info.version,
       );
     } catch (e, t) {
-      Logger(runtimeType.toString())
-          .severe('App info fetch ran into error', e, t);
+      Logger(runtimeType.toString()).severe('App info fetch ran into error', e, t);
       rethrow;
     }
   }
@@ -116,15 +110,14 @@ class BuildInfoServiceImpl implements BuildInfoService {
     try {
       final locale = WidgetsBinding.instance.platformDispatcher.locale;
       final timezone = DateTime.now().timeZoneName;
-      
+
       return LocaleInfoModel(
         languageCode: locale.languageCode,
         countryCode: locale.countryCode ?? 'Unknown',
         timezone: timezone,
       );
     } catch (e, t) {
-      Logger(runtimeType.toString())
-          .severe('Locale info fetch ran into error', e, t);
+      Logger(runtimeType.toString()).severe('Locale info fetch ran into error', e, t);
       rethrow;
     }
   }

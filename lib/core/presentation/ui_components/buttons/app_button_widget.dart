@@ -37,9 +37,9 @@ class AppButton extends StatelessWidget {
     this.view,
     this.wrap = false,
     this.icon,
-  })  : _type = _ButtonType.secondary,
-        color = null,
-        textColor = outlineColor;
+  }) : _type = _ButtonType.secondary,
+       color = null,
+       textColor = outlineColor;
 
   const AppButton.text({
     super.key,
@@ -51,8 +51,8 @@ class AppButton extends StatelessWidget {
     this.view,
     this.wrap = false,
     this.icon,
-  })  : _type = _ButtonType.text,
-        color = Colors.transparent;
+  }) : _type = _ButtonType.text,
+       color = Colors.transparent;
 
   final String label;
   final bool busy;
@@ -80,16 +80,9 @@ class AppButton extends StatelessWidget {
     }
 
     //? Get label text
-    final textStyle = AppStyles.of(context).body16SemiBold.copyWith(
-          color: tColor,
-        );
+    final textStyle = AppStyles.of(context).body16SemiBold.copyWith(color: tColor);
     final labelText = FittedBox(
-      child: Text(
-        label,
-        style: textStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      child: Text(label, style: textStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
 
     //? Get full button child
@@ -101,7 +94,11 @@ class AppButton extends StatelessWidget {
     } else {
       child = Row(
         mainAxisSize: MainAxisSize.min,
-        children: [icon!, const SizedBox(width: 8), Flexible(child: labelText)],
+        children: [
+          icon!,
+          const SizedBox(width: 8),
+          Flexible(child: labelText),
+        ],
       );
     }
 
@@ -122,21 +119,16 @@ class AppButton extends StatelessWidget {
           : null,
       style: ButtonStyle(
         splashFactory: InkSplash.splashFactory,
-        minimumSize: WidgetStateProperty.all(
-          wrap ? const Size(40, 48) : const Size.fromHeight(48),
-        ),
+        minimumSize: WidgetStateProperty.all(wrap ? const Size(40, 48) : const Size.fromHeight(48)),
         padding: WidgetStateProperty.all(
-          busy
-              ? const EdgeInsets.all(4)
-              : const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          busy ? const EdgeInsets.all(4) : const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         ),
         backgroundColor: WidgetStateColor.resolveWith((states) {
           if (!_type.isPrimary) return Colors.transparent;
           if (states.contains(WidgetState.disabled)) {
             return colors.grey600;
           }
-          if (states.contains(WidgetState.pressed) ||
-              states.contains(WidgetState.focused)) {
+          if (states.contains(WidgetState.pressed) || states.contains(WidgetState.focused)) {
             return colors.attitudeSuccessMain;
           }
           if (states.contains(WidgetState.hovered)) {
@@ -165,12 +157,7 @@ class AppButton extends StatelessWidget {
 
           return RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(wrap ? 48 : 20),
-            side: color != null
-                ? BorderSide(
-                    width: 1,
-                    color: color,
-                  )
-                : BorderSide.none,
+            side: color != null ? BorderSide(width: 1, color: color) : BorderSide.none,
           );
         }),
       ),

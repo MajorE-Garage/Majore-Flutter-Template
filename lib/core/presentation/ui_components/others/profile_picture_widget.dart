@@ -36,7 +36,9 @@ class ProfilePictureWidget extends StatelessWidget {
               image: image!,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                Logger(runtimeType.toString()).severe('Failed to render profile image', error, stackTrace);
+                Logger(
+                  runtimeType.toString(),
+                ).severe('Failed to render profile image', error, stackTrace);
                 return Align(
                   alignment: Alignment.center,
                   child: Icon(

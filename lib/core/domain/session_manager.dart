@@ -19,7 +19,11 @@ class SessionManager extends AppViewModel {
 
   final Map _sessionHeaders = <String, String>{};
 
-  SessionManager({required this.localStorageService, required this.errorLogService, required this.analyticsService});
+  SessionManager({
+    required this.localStorageService,
+    required this.errorLogService,
+    required this.analyticsService,
+  });
 
   bool get isOpen => _sessionIsOpen;
   String? get accessToken => _sessionIsOpen ? _token : null;

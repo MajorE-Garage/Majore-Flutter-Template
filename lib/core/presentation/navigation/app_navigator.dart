@@ -10,8 +10,7 @@ export 'app_routes.dart';
 class AppNavigator {
   AppNavigator.of(BuildContext context) : _navigator = Navigator.of(context);
 
-  AppNavigator.ofKey(GlobalKey<NavigatorState> key)
-      : _navigator = key.currentState!;
+  AppNavigator.ofKey(GlobalKey<NavigatorState> key) : _navigator = key.currentState!;
 
   static final mainKey = GlobalKey<NavigatorState>();
   static AppNavigator main = AppNavigator.ofKey(mainKey);
@@ -51,25 +50,15 @@ class AppNavigator {
   }
 
   Future<T?> pushNamed<T>(String route, {arguments}) {
-    return _navigator.pushNamed<T>(
-      route,
-      arguments: arguments,
-    );
+    return _navigator.pushNamed<T>(route, arguments: arguments);
   }
 
   Future<T?> pushNamedReplacement<T, TO>(String route, {arguments}) {
-    return _navigator.pushReplacementNamed<T, TO>(
-      route,
-      arguments: arguments,
-    );
+    return _navigator.pushReplacementNamed<T, TO>(route, arguments: arguments);
   }
 
   Future<T?> pushNamedAndClear<T>(String route, {arguments}) {
-    return _navigator.pushNamedAndRemoveUntil<T>(
-      route,
-      (_) => false,
-      arguments: arguments,
-    );
+    return _navigator.pushNamedAndRemoveUntil<T>(route, (_) => false, arguments: arguments);
   }
 
   void pop([result]) {
@@ -81,9 +70,7 @@ class AppNavigator {
   }
 
   void popUntilNamed(String routeName) {
-    return _navigator.popUntil(
-      (route) => route.settings.name == routeName,
-    );
+    return _navigator.popUntil((route) => route.settings.name == routeName);
   }
 
   void popUntilType(Type type) {
@@ -128,9 +115,7 @@ class AppNavigator {
       context: currentContext,
       builder: (_) => dialog,
       barrierDismissible: barrierDismissable,
-      routeSettings: RouteSettings(
-        name: routeName ?? dialog.runtimeType.toString(),
-      ),
+      routeSettings: RouteSettings(name: routeName ?? dialog.runtimeType.toString()),
     );
   }
 
@@ -152,14 +137,11 @@ class AppNavigator {
       enableDrag: enableDrag,
       isScrollControlled: isScrollControlled,
       useRootNavigator: useRootNavigator,
-      routeSettings: RouteSettings(
-        name: routeName ?? sheet.runtimeType.toString(),
-      ),
+      routeSettings: RouteSettings(name: routeName ?? sheet.runtimeType.toString()),
       backgroundColor: backgroundColor,
       shape: shape,
       constraints: BoxConstraints(
-        maxHeight:
-            MediaQuery.sizeOf(currentContext).height - 2 * kToolbarHeight,
+        maxHeight: MediaQuery.sizeOf(currentContext).height - 2 * kToolbarHeight,
       ),
     );
   }

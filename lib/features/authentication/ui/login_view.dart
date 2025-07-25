@@ -27,7 +27,8 @@ class LoginView extends StatelessWidget {
             SizedBox(height: 16),
             AppViewSelector<LoginVm, bool>(
               selector: (vm) => vm.isBusy,
-              builder: (isBusy, child) => AppButton.primary(onPressed: vm.login, busy: isBusy, label: 'Login'),
+              builder: (isBusy, child) =>
+                  AppButton.primary(onPressed: vm.login, busy: isBusy, label: 'Login'),
             ),
             AppViewSelector<LoginVm, bool>(
               selector: (vm) => vm.hasEncounteredError,

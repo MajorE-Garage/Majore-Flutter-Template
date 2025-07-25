@@ -164,7 +164,10 @@ class AppToastWidgetState extends State<AppToastWidget> with SingleTickerProvide
   void initState() {
     super.initState();
     _toast = widget.toast;
-    _animationController = AnimationController(vsync: this, duration: Constants.toastAnimationDuration);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Constants.toastAnimationDuration,
+    );
     _animationController.forward();
   }
 
@@ -216,7 +219,9 @@ class AppToastWidgetState extends State<AppToastWidget> with SingleTickerProvide
                     Expanded(
                       child: Text(
                         _toast.message,
-                        style: AppStyles.of(context).body16Medium.copyWith(color: _toast.type.getTextColor(context)),
+                        style: AppStyles.of(
+                          context,
+                        ).body16Medium.copyWith(color: _toast.type.getTextColor(context)),
                       ),
                     ),
                   ],

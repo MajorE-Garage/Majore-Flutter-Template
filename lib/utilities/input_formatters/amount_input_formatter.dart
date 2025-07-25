@@ -27,8 +27,7 @@ class AmountThousandthFormatter extends TextInputFormatter {
   }
 
   @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     final formattedNum = format(newValue.text);
     return formattedNum;
   }

@@ -33,7 +33,11 @@ class EmptyStateWidget extends StatelessWidget {
               dimension: illustrationSize,
               child: illustration
                   .animate(onPlay: (controller) => controller.loop(reverse: true))
-                  .scale(begin: const Offset(1.2, 1.2), curve: Curves.elasticOut, duration: const Duration(seconds: 4)),
+                  .scale(
+                    begin: const Offset(1.2, 1.2),
+                    curve: Curves.elasticOut,
+                    duration: const Duration(seconds: 4),
+                  ),
             ),
             const SizedBox(height: 16),
             Text(mainText, style: styles.body16Regular, textAlign: TextAlign.center),

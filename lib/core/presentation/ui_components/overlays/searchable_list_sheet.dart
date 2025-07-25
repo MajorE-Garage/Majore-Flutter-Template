@@ -80,7 +80,9 @@ class _SearchableListSheetState<T> extends State<_SearchableListSheet<T>> {
             child: Container(
               constraints: const BoxConstraints(maxHeight: 56, minHeight: 48),
               alignment: Alignment.centerLeft,
-              decoration: BoxDecoration(color: item == widget.currentValue ? AppColors.of(context).grey600 : null),
+              decoration: BoxDecoration(
+                color: item == widget.currentValue ? AppColors.of(context).grey600 : null,
+              ),
               child: widget.itemBuilder(context, item),
             ),
           ),

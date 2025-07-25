@@ -46,7 +46,9 @@ class AppIconButton extends StatelessWidget {
       return InkResponse(
         // TODO(Toyyib): Add analytics for icon buttons
         onTap: onPressed,
-        child: _child ?? Icon(_icon, color: iconColor ?? AppColors.of(context).primaryColor, size: iconSize),
+        child:
+            _child ??
+            Icon(_icon, color: iconColor ?? AppColors.of(context).primaryColor, size: iconSize),
       );
     }
 
@@ -59,7 +61,9 @@ class AppIconButton extends StatelessWidget {
         width: size,
         decoration: BoxDecoration(shape: BoxShape.circle, color: color),
         alignment: Alignment.center,
-        child: _child ?? Icon(_icon, color: iconColor ?? AppColors.of(context).grey800, size: iconSize),
+        child:
+            _child ??
+            Icon(_icon, color: iconColor ?? AppColors.of(context).grey800, size: iconSize),
       ),
     );
   }

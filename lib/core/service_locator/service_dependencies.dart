@@ -55,6 +55,8 @@ class ServiceDependencies extends ServiceLocator {
       return service;
     });
 
-    locator.registerLazySingleton<BuildInfoService>(() => BuildInfoServiceImpl(deviceInfoPlugin: DeviceInfoPlugin()));
+    locator.registerLazySingleton<BuildInfoService>(
+      () => BuildInfoServiceImpl(deviceInfoPlugin: DeviceInfoPlugin()),
+    );
   }
 }

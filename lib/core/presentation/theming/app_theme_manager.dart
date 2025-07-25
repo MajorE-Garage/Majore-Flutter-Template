@@ -12,11 +12,9 @@ class AppThemeManager extends AppViewModel {
   final AppTheme _lightTheme;
   final AppTheme? _darkTheme;
 
-  AppThemeManager({
-    required AppTheme lightTheme,
-    required AppTheme? darkTheme,
-  })  : _lightTheme = lightTheme,
-        _darkTheme = darkTheme;
+  AppThemeManager({required AppTheme lightTheme, required AppTheme? darkTheme})
+    : _lightTheme = lightTheme,
+      _darkTheme = darkTheme;
 
   ThemeData? get lightTheme => _lightTheme.data;
   ThemeData? get darkTheme => _darkTheme?.data;
@@ -24,9 +22,7 @@ class AppThemeManager extends AppViewModel {
   ThemeMode get themeMode {
     final mode = _themeMode;
     if (mode == null) {
-      throw Exception(
-        'Tried accessing themeMode before initialise was called or finished',
-      );
+      throw Exception('Tried accessing themeMode before initialise was called or finished');
     } else {
       return mode;
     }

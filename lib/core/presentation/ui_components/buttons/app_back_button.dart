@@ -12,10 +12,7 @@ class AppBackButton extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: AppNavigator.of(context).maybePop,
-        child: Icon(
-          CupertinoIcons.arrow_left,
-          color: color ?? AppColors.of(context).textColor,
-        ),
+        child: Icon(CupertinoIcons.arrow_left, color: color ?? AppColors.of(context).textColor),
       ),
     );
   }

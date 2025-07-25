@@ -18,7 +18,10 @@ class AppDatePicker extends StatefulWidget {
 
   Future<DateTime?> show([BuildContext? context]) {
     final navigator = context != null ? AppNavigator.of(context) : AppNavigator.main;
-    return navigator.openDialog<DateTime>(routeName: 'CustomDatePicker(${title ?? 'No Title'})', dialog: this);
+    return navigator.openDialog<DateTime>(
+      routeName: 'CustomDatePicker(${title ?? 'No Title'})',
+      dialog: this,
+    );
   }
 
   @override

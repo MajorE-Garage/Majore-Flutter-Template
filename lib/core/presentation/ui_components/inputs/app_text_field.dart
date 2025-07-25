@@ -160,7 +160,9 @@ class _AppTextFieldState extends State<AppTextField> {
           onChanged: widget.onChanged,
           onTap: widget.onTap,
           onEditingComplete: widget.onEditComplete ?? () => FocusScope.of(context).nextFocus(),
-          style: styles.value16Medium.copyWith(letterSpacing: (!_visible && widget.controller.text.isNotEmpty) ? 7 : 0),
+          style: styles.value16Medium.copyWith(
+            letterSpacing: (!_visible && widget.controller.text.isNotEmpty) ? 7 : 0,
+          ),
           inputFormatters: widget.formatters,
           textAlignVertical: TextAlignVertical.center,
           cursorColor: colors.grey800,
@@ -176,7 +178,10 @@ class _AppTextFieldState extends State<AppTextField> {
                 ? null
                 : Padding(
                     padding: const EdgeInsets.only(left: 16, right: 8),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [widget.prefix!]),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [widget.prefix!],
+                    ),
                   ),
             suffixIcon: !widget._isSecret && widget.suffix == null
                 ? null

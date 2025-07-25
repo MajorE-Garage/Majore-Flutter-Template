@@ -71,9 +71,7 @@ class AppShimmer extends StatelessWidget {
         borderRadius: borderRadius,
         border: _borderless
             ? null
-            : Border.fromBorderSide(
-                BorderSide(color: AppColors.of(context).grey800),
-              ),
+            : Border.fromBorderSide(BorderSide(color: AppColors.of(context).grey800)),
       ),
       child: Shimmer.fromColors(
         baseColor: AppColors.of(context).grey500.withAlpha(26),

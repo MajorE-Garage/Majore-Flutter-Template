@@ -10,10 +10,7 @@ class AppTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return Container(
-      decoration: BoxDecoration(
-        color: colors.grey300,
-        borderRadius: BorderRadius.circular(64),
-      ),
+      decoration: BoxDecoration(color: colors.grey300, borderRadius: BorderRadius.circular(64)),
       child: TabBar(
         tabAlignment: TabAlignment.fill,
         indicatorPadding: const EdgeInsets.all(4),
@@ -49,10 +46,7 @@ class AppTab extends Tab {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Container(
-            margin: iconMargin,
-            child: icon,
-          ),
+          Container(margin: iconMargin, child: icon),
           _buildLabelText(),
         ],
       );
@@ -60,10 +54,7 @@ class AppTab extends Tab {
 
     return SizedBox(
       height: height ?? calculatedHeight,
-      child: Center(
-        widthFactor: 1,
-        child: label,
-      ),
+      child: Center(widthFactor: 1, child: label),
     );
   }
 

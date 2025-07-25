@@ -59,9 +59,7 @@ class _AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
     final country = controller.country.value;
     final phone = controller.phone.text;
     String? error;
-    if (!hasValidator &&
-        widget.isRequired &&
-        (country == null || phone.isEmpty)) {
+    if (!hasValidator && widget.isRequired && (country == null || phone.isEmpty)) {
       error = 'This field is required';
     }
 
@@ -86,17 +84,13 @@ class _AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             if (widget.label != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  widget.label!,
-                  style: styles.label14Regular,
-                ),
+                child: Text(widget.label!, style: styles.label14Regular),
               ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: (MediaQuery.of(context).size.width * 0.24)
-                      .clamp(104.0, 144.0),
+                  width: (MediaQuery.of(context).size.width * 0.24).clamp(104.0, 144.0),
                   child: AppDropdownField<PhoneCountryModel>(
                     controller: controller.country,
                     itemBuilder: (country) => FittedBox(
@@ -126,10 +120,7 @@ class _AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
                     keyboardType: TextInputType.phone,
                     keyboardAction: widget.keyboardAction,
                     onEditComplete: widget.onEditComplete,
-                    formatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      ...widget.formatters,
-                    ],
+                    formatters: [FilteringTextInputFormatter.digitsOnly, ...widget.formatters],
                     isRequired: false,
                     suffix: widget.suffix,
                     enabled: widget.enabled,
@@ -146,10 +137,7 @@ class _AppPhoneNumberFieldState extends State<AppPhoneNumberField> {
             left: 16,
             child: Text(
               _errorText!,
-              style: styles.body14Medium.copyWith(
-                color: colors.attitudeErrorMain,
-                height: 1,
-              ),
+              style: styles.body14Medium.copyWith(color: colors.attitudeErrorMain, height: 1),
             ),
           ),
       ],
@@ -162,31 +150,20 @@ class PhoneCountryModel {
   final String iso2;
   final String _phoneCode;
 
-  PhoneCountryModel({
-    required this.name,
-    required this.iso2,
-    required String phoneCode,
-  }) : _phoneCode = phoneCode;
+  PhoneCountryModel({required this.name, required this.iso2, required String phoneCode})
+    : _phoneCode = phoneCode;
 
   factory PhoneCountryModel.fromMap(Map<String, dynamic> map) {
-    return PhoneCountryModel(
-      name: map['name'],
-      iso2: map['iso2'],
-      phoneCode: map['phone_code'],
-    );
+    return PhoneCountryModel(name: map['name'], iso2: map['iso2'], phoneCode: map['phone_code']);
   }
   String get phoneCode => '+$_phoneCode';
   String get flag => String.fromCharCodes([
-        127365 + iso2.toLowerCase().codeUnitAt(0),
-        127365 + iso2.toLowerCase().codeUnitAt(1),
-      ]);
+    127365 + iso2.toLowerCase().codeUnitAt(0),
+    127365 + iso2.toLowerCase().codeUnitAt(1),
+  ]);
 
   Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'iso2': iso2,
-      'phone_code': _phoneCode,
-    };
+    return {'name': name, 'iso2': iso2, 'phone_code': _phoneCode};
   }
 }
 
@@ -195,23 +172,24 @@ class PhoneInputController extends ChangeNotifier {
 
   final phone = TextEditingController();
   final country = DropdownValueController<PhoneCountryModel>.searchable(
-      searchQueryHandler: (query, countries) {
-    final searchQuery = query.toLowerCase();
-    final startsWithQuery = countries.where(
-      (country) =>
-          country.name.toLowerCase().startsWith(searchQuery) ||
-          country.phoneCode.startsWith(searchQuery),
-    );
+    searchQueryHandler: (query, countries) {
+      final searchQuery = query.toLowerCase();
+      final startsWithQuery = countries.where(
+        (country) =>
+            country.name.toLowerCase().startsWith(searchQuery) ||
+            country.phoneCode.startsWith(searchQuery),
+      );
 
-    final containsQuery = countries.where(
-      (country) =>
-          country.name.toLowerCase().contains(searchQuery) ||
-          country.phoneCode.contains(searchQuery),
-    );
+      final containsQuery = countries.where(
+        (country) =>
+            country.name.toLowerCase().contains(searchQuery) ||
+            country.phoneCode.contains(searchQuery),
+      );
 
-    final filteredList = startsWithQuery.followedBy(containsQuery).toSet();
-    return filteredList;
-  });
+      final filteredList = startsWithQuery.followedBy(containsQuery).toSet();
+      return filteredList;
+    },
+  );
 
   void addCountries(Iterable<PhoneCountryModel> countries) {
     country.options = country.options.toList()..addAll(countries);

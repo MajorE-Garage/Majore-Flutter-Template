@@ -23,7 +23,7 @@ extension NumExtension on num {
         TextSpan(
           text: NumberFormat.currency(symbol: '').format(this),
           style: style,
-        )
+        ),
       ],
     );
   }

@@ -1,8 +1,6 @@
 mixin ValidatorMixin {
   String? validateRequiredField(dynamic val) {
-    if (val == null ||
-        (val is num && val == 0) ||
-        (val is String && val.trim().isEmpty)) {
+    if (val == null || (val is num && val == 0) || (val is String && val.trim().isEmpty)) {
       return 'This field cannot be empty';
     }
     return null;
@@ -11,8 +9,8 @@ mixin ValidatorMixin {
   String? validateEmail(String email) {
     if (email.trim().isEmpty) return 'Email address cannot be empty';
     final valid = RegExp(
-            r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-        .hasMatch(email);
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email);
     if (!valid) return 'Enter a valid email address';
     return null;
   }
@@ -32,7 +30,7 @@ mixin ValidatorMixin {
     return null;
   }
 
-/*   String? validatePhone(String? phone, CountryModel? country) {
+  /*   String? validatePhone(String? phone, CountryModel? country) {
     if (country == null) {
       return "Select country's phone code";
     }

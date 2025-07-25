@@ -69,7 +69,8 @@ class TimeFieldController extends TextEditingController {
 
   bool _pickerIsOpen = false;
 
-  TimeFieldController({TimeOfDay? initialTime, DateFormat? format}) : _format = format ?? DateFormat('hh:mm a');
+  TimeFieldController({TimeOfDay? initialTime, DateFormat? format})
+    : _format = format ?? DateFormat('hh:mm a');
 
   TimeOfDay? get selectedTime => _time;
 

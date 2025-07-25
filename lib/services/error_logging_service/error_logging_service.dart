@@ -35,7 +35,12 @@ class ErrorLogService {
     Logger.root.onRecord.listen((event) {
       if (kDebugMode) debugPrint(event.message);
       if (event.level >= Level.SEVERE) {
-        recordError(event.error, event.stackTrace, reason: event.message, information: [event.loggerName, event.time]);
+        recordError(
+          event.error,
+          event.stackTrace,
+          reason: event.message,
+          information: [event.loggerName, event.time],
+        );
       }
     });
 

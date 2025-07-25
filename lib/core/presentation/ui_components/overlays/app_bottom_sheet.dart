@@ -86,7 +86,10 @@ class _AppBottomSheetState<T> extends State<AppBottomSheet<T>> with SingleTicker
                 height: 4,
                 width: 120,
                 margin: const EdgeInsets.only(bottom: 24, top: 8),
-                decoration: BoxDecoration(color: AppColors.of(context).grey500, borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: AppColors.of(context).grey500,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               if (widget.heading != null)
                 Padding(
@@ -100,7 +103,10 @@ class _AppBottomSheetState<T> extends State<AppBottomSheet<T>> with SingleTicker
               Flexible(
                 child: widget.builderHandlesScroll
                     ? Padding(padding: widget.padding, child: widget.builder(context))
-                    : SingleChildScrollView(padding: widget.padding, child: widget.builder(context)),
+                    : SingleChildScrollView(
+                        padding: widget.padding,
+                        child: widget.builder(context),
+                      ),
               ),
             ],
           ),

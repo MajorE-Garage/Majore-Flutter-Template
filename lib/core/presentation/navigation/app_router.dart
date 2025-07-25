@@ -20,11 +20,11 @@ class AppRouter {
     //but we've handled it in the main application widget but could be useful though
     // errorBuilder: (context, state) => ErrorView(error: state.error),
     routes: [
-      // GoRoute(
-      //   path: splash,
-      //   name: 'splash',
-      //   builder: (context, state) => const LoginView(),
-      // ),
+      GoRoute(
+        path: splash,
+        name: 'splash',
+        builder: (context, state) => const LoginView(),
+      ),
       GoRoute(
         path: login,
         name: 'login',

@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "appName": "Majore MVVM Template",
+  "@appName": {
+    "description": "The name of the application"
+  }
+  
+} 

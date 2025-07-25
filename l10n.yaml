@@ -1,0 +1,7 @@
+output-class: AppTranslations
+template-arb-file: app_en.arb
+arb-dir: lib/l10n/arbs
+output-localization-file: app_translations.dart
+output-dir: lib/l10n/generated
+synthetic-package: false
+untranslated-messages-file: lib/l10n/untranslated_messages.json

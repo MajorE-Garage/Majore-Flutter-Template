@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class AppBackButton extends StatelessWidget {
   const AppBackButton({this.color, super.key});
@@ -12,10 +12,7 @@ class AppBackButton extends StatelessWidget {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: AppNavigator.of(context).maybePop,
-        child: Icon(
-          CupertinoIcons.arrow_left,
-          color: color ?? AppColors.of(context).textColor,
-        ),
+        child: Icon(CupertinoIcons.arrow_left, color: color ?? AppColors.of(context).textColor),
       ),
     );
   }

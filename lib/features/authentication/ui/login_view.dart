@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/presentation/app_view_builder.dart';
+import '../../../core/presentation/presentation.dart';
 import '../../../core/service_locator/service_locator.dart';
 import '../domain/login_vm.dart';
 
@@ -10,27 +10,32 @@ class LoginView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AppViewBuilder<LoginVm>(
+      body: AppView<LoginVm>(
         model: ServiceLocator.get(),
         builder: (vm, _) => Column(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextFormField(
+            AppTextField(
               controller: vm.emailField,
-              decoration: InputDecoration(labelText: 'Email'),
+              label: 'Email',
               keyboardType: TextInputType.emailAddress,
-              textCapitalization: TextCapitalization.none,
+              capitalization: TextCapitalization.none,
             ),
             SizedBox(height: 16),
-            TextFormField(
-              controller: vm.passwordField,
-              decoration: InputDecoration(labelText: 'Password'),
-            ),
+            AppTextField(controller: vm.passwordField, label: 'Password'),
             SizedBox(height: 16),
-            TextButton(onPressed: vm.login, child: Text('Login')),
-
-            if (vm.hasEncounteredError) Text('Login failed - ${vm.lastFailure?.message ?? ''}'),
+            AppViewSelector<LoginVm, bool>(
+              selector: (vm) => vm.isBusy,
+              builder: (isBusy, child) =>
+                  AppButton.primary(onPressed: vm.login, busy: isBusy, label: 'Login'),
+            ),
+            AppViewSelector<LoginVm, bool>(
+              selector: (vm) => vm.hasEncounteredError,
+              builder: (hasEncounteredError, child) => hasEncounteredError
+                  ? Text('Login failed - ${vm.lastFailure?.message ?? ''}')
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
       ),

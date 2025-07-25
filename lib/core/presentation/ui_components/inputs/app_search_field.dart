@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_icon_button.dart';
+import '../../presentation.dart';
 
 class AppSearchField extends StatelessWidget {
   const AppSearchField({
@@ -86,7 +85,7 @@ class AppSearchField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),
-          borderSide: BorderSide(width: 0.8, color: colors.primaryColor.withOpacity(0.5)),
+          borderSide: BorderSide(width: 0.8, color: colors.primaryColor.withAlpha(128)),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(32),

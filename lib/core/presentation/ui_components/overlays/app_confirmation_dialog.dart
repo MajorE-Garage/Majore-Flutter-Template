@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_button_widget.dart';
-import 'app_dialog.dart';
+import '../../presentation.dart';
 
 // May be converted to a Sheet rather than a sheet,
 // depending on design decision
@@ -26,11 +24,19 @@ class AppConfirmationDialog extends AppDialog<bool> {
            children: [
              if (illustration != null) SizedBox(height: 124, width: 124, child: illustration),
              const SizedBox(height: 0),
-             Text(heading, textAlign: TextAlign.center, style: AppStyles.of(context).heading20Regular),
+             Text(
+               heading,
+               textAlign: TextAlign.center,
+               style: AppStyles.of(context).heading20Regular,
+             ),
              if (body != null)
                Padding(
                  padding: const EdgeInsets.only(top: 8),
-                 child: Text(body, style: AppStyles.of(context).body16Regular, textAlign: TextAlign.center),
+                 child: Text(
+                   body,
+                   style: AppStyles.of(context).body16Regular,
+                   textAlign: TextAlign.center,
+                 ),
                ),
              const SizedBox(height: 24),
              SizedBox(

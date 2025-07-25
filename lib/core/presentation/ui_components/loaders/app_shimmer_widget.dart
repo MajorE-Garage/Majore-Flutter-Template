@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 /// This widget renders a rectangle shaped element and animates a gradient
 /// across its dimensions to give a shimmering effect.
@@ -71,9 +71,7 @@ class AppShimmer extends StatelessWidget {
         borderRadius: borderRadius,
         border: _borderless
             ? null
-            : Border.fromBorderSide(
-                BorderSide(color: AppColors.of(context).grey800),
-              ),
+            : Border.fromBorderSide(BorderSide(color: AppColors.of(context).grey800)),
       ),
       child: Shimmer.fromColors(
         baseColor: AppColors.of(context).grey500.withAlpha(26),

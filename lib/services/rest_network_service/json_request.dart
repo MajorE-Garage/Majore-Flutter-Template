@@ -21,46 +21,25 @@ class JsonRequest {
     this.useToken = true,
   });
 
-  JsonRequest.get(
-    this.endpoint, {
-    this.queryParams,
-    this.useToken = true,
-  })  : body = const {},
-        method = GET;
+  JsonRequest.get(this.endpoint, {this.queryParams, this.useToken = true})
+    : body = const {},
+      method = GET;
 
-  JsonRequest.post(
-    this.endpoint,
-    this.body, {
-    this.queryParams,
-    this.useToken = true,
-  }) : method = POST;
+  JsonRequest.post(this.endpoint, this.body, {this.queryParams, this.useToken = true})
+    : method = POST;
 
-  JsonRequest.patch(
-    this.endpoint,
-    this.body, {
-    this.queryParams,
-    this.useToken = true,
-  }) : method = PATCH;
+  JsonRequest.patch(this.endpoint, this.body, {this.queryParams, this.useToken = true})
+    : method = PATCH;
 
-  JsonRequest.put(
-    this.endpoint,
-    this.body, {
-    this.queryParams,
-    this.useToken = true,
-  }) : method = PUT;
+  JsonRequest.put(this.endpoint, this.body, {this.queryParams, this.useToken = true})
+    : method = PUT;
 
-  JsonRequest.delete(
-    this.endpoint,
-    this.body, {
-    this.queryParams,
-    this.useToken = true,
-  }) : method = DELETE;
+  JsonRequest.delete(this.endpoint, this.body, {this.queryParams, this.useToken = true})
+    : method = DELETE;
 
   @override
   bool operator ==(other) =>
-      other is JsonRequest &&
-      endpoint == other.endpoint &&
-      method == other.method;
+      other is JsonRequest && endpoint == other.endpoint && method == other.method;
 
   @override
   int get hashCode => endpoint.hashCode;

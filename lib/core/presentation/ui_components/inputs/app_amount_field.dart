@@ -19,22 +19,18 @@ class AppAmountField extends AppTextField {
     super.prefix,
     super.suffix,
   }) : super(
-          validator:
-              validator != null ? (_) => validator(controller.amount) : null,
-          formatters: [
-            // If formatters is not null, remove AmountThousandthFormatter from it
-            // and spread the rest into this input's formatters
-            ...(formatters ?? [])
-              ..removeWhere(
-                (frt) => frt.runtimeType == AmountThousandthFormatter,
-              ),
-            // AmountThousandthFormatter included wether formatters is null or not
-            AmountThousandthFormatter(),
-          ],
-          onChanged:
-              onChanged != null ? (_) => onChanged(controller.amount) : null,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        );
+         validator: validator != null ? (_) => validator(controller.amount) : null,
+         formatters: [
+           // If formatters is not null, remove AmountThousandthFormatter from it
+           // and spread the rest into this input's formatters
+           ...(formatters ?? [])
+             ..removeWhere((frt) => frt.runtimeType == AmountThousandthFormatter),
+           // AmountThousandthFormatter included wether formatters is null or not
+           AmountThousandthFormatter(),
+         ],
+         onChanged: onChanged != null ? (_) => onChanged(controller.amount) : null,
+         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+       );
 }
 
 class AmountFieldController extends TextEditingController {

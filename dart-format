@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Dart Format Script
+# This script runs dart format on all Dart files in the codebase
+
+set -e  # Exit on any error
+
+# Function to get line length from .vscode/settings.json
+get_line_length() {
+    if [ -f ".vscode/settings.json" ]; then
+        # Extract dart.lineLength value from settings.json
+        local line_length=$(grep -o '"dart.lineLength": [0-9]*' .vscode/settings.json | grep -o '[0-9]*')
+        if [ -n "$line_length" ]; then
+            echo "$line_length"
+        else
+            echo "80"  # Default if not found
+        fi
+    else
+        echo "80"  # Default if file doesn't exist
+    fi
+}
+
+# Get the line length setting
+LINE_LENGTH=$(get_line_length)
+echo "🔍 Finding all Dart files in the codebase..."
+echo "📏 Using line length: $LINE_LENGTH characters"
+echo ""
+
+# Find all .dart files in lib directory and format them
+find ./lib -name "*.dart" -type f | while read -r file; do
+    echo "📝 Formatting: $file"
+    dart format --line-length="$LINE_LENGTH" "$file"
+done
+
+echo ""
+echo "✅ Dart formatting completed!"
+echo "📊 Summary: All Dart files have been formatted using dart format" 

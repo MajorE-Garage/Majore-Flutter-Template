@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class AppBottomSheet<T> extends StatefulWidget {
   AppBottomSheet({
@@ -47,22 +47,6 @@ class AppBottomSheet<T> extends StatefulWidget {
       isScrollControlled: isScrollControlled,
       routeName: routeName,
     );
-    /*  final value = await showModalBottomSheet<T>(
-      context: ctx,
-      builder: (_) => this,
-      isDismissible: isDismissable,
-      enableDrag: enableDrag,
-      elevation: 0,
-      isScrollControlled: isScrollControlled,
-      backgroundColor: AppColors.of(ctx).overlayBackground,
-      useRootNavigator: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(ctx).size.height - 2 * kToolbarHeight,
-      ),
-      routeSettings: RouteSettings(
-        name: routeName ?? runtimeType.toString(),
-      ),
-    ); */
     return value;
   }
 }
@@ -118,15 +102,12 @@ class _AppBottomSheetState<T> extends State<AppBottomSheet<T>> with SingleTicker
                 ),
               Flexible(
                 child: widget.builderHandlesScroll
-                    ? Padding(
-                        padding: widget.padding,
-                        child: widget.builder(context),
-                      )
+                    ? Padding(padding: widget.padding, child: widget.builder(context))
                     : SingleChildScrollView(
                         padding: widget.padding,
                         child: widget.builder(context),
                       ),
-              )
+              ),
             ],
           ),
         ),

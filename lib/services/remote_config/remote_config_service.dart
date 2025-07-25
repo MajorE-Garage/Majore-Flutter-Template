@@ -40,8 +40,7 @@ class _RemoteConfigService extends RemoteConfigService {
       );
       return await remoteConfig.fetchAndActivate();
     } catch (e, t) {
-      Logger(runtimeType.toString())
-          .severe('RemoteConfigService failed to initialise', e, t);
+      Logger(runtimeType.toString()).severe('RemoteConfigService failed to initialise', e, t);
       return false;
     }
   }
@@ -51,8 +50,7 @@ class _RemoteConfigService extends RemoteConfigService {
     try {
       return await remoteConfig.fetchAndActivate();
     } catch (e, t) {
-      Logger(runtimeType.toString())
-          .severe('RemoteConfigService failed to refresh', e, t);
+      Logger(runtimeType.toString()).severe('RemoteConfigService failed to refresh', e, t);
       return false;
     }
   }

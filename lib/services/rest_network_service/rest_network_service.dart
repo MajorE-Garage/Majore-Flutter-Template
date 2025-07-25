@@ -19,8 +19,12 @@ abstract class RestNetworkService {
   @protected
   final Duration sendTimeout, receiveTimeout;
 
-  RestNetworkService({required this.baseUrl, required this.isProd, required this.sendTimeout, Duration? receiveTimeout})
-    : receiveTimeout = receiveTimeout ?? sendTimeout;
+  RestNetworkService({
+    required this.baseUrl,
+    required this.isProd,
+    required this.sendTimeout,
+    Duration? receiveTimeout,
+  }) : receiveTimeout = receiveTimeout ?? sendTimeout;
 
   /// Sends a Json request with the specified [request].
   ///

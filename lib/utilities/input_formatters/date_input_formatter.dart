@@ -5,8 +5,7 @@ class DateInputFormatter extends TextInputFormatter {
   static const _maxLength = 8;
   DateInputFormatter({required this.separator});
   @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     // Remove any non-numeric characters from the new value
     String sanitizedValue = newValue.text.replaceAll(RegExp('[^0-9]'), '');
 

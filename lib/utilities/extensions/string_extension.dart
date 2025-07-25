@@ -11,10 +11,7 @@ extension StringExtension on String {
 
   String truncate(int limit) {
     if (limit < 0) return this;
-    return substring(
-      0,
-      length.clamp(0, limit),
-    );
+    return substring(0, length.clamp(0, limit));
   }
 
   String pluralise(int count) {

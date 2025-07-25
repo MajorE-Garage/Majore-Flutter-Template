@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_icon_button.dart';
-import '../overlays/app_bottom_sheet.dart';
-import '../overlays/searchable_list_sheet.dart';
+import '../../presentation.dart';
 
 class AppDropdownField<T> extends StatefulWidget {
   const AppDropdownField({
@@ -90,7 +87,9 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
           constraints: const BoxConstraints(maxHeight: 56, minHeight: 48),
           padding: const EdgeInsets.only(left: 16, right: 16),
           alignment: Alignment.centerLeft,
-          decoration: BoxDecoration(color: item == widget.controller.value ? AppColors.of(context).grey600 : null),
+          decoration: BoxDecoration(
+            color: item == widget.controller.value ? AppColors.of(context).grey600 : null,
+          ),
           child: widget.itemBuilder(item),
         ),
       );
@@ -206,7 +205,11 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                     widget.icon ??
                         AppIconButton(
                           circled: false,
-                          child: Icon(Icons.arrow_drop_down_rounded, color: AppColors.of(context).grey700, size: 24),
+                          child: Icon(
+                            Icons.arrow_drop_down_rounded,
+                            color: AppColors.of(context).grey700,
+                            size: 24,
+                          ),
                         ),
                   ],
                 ),
@@ -227,7 +230,10 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
               if (error != null)
                 Padding(
                   padding: const EdgeInsets.only(left: 16),
-                  child: Text(error, style: styles.body14Medium.copyWith(color: colors.attitudeErrorMain, height: 1)),
+                  child: Text(
+                    error,
+                    style: styles.body14Medium.copyWith(color: colors.attitudeErrorMain, height: 1),
+                  ),
                 ),
             ],
           ),

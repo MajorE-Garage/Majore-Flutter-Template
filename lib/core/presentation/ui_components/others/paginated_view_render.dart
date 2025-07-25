@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../presentation.dart';
-import '../buttons/app_button_widget.dart';
-import '../loaders/app_loading_indicator.dart';
 
 class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends StatelessWidget {
   PaginatedViewRender({
@@ -73,7 +71,11 @@ class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends Statel
           : EmptyStateWidget(
               mainText: vm.lastFailure?.message.trim() ?? 'Something went wrong',
               illustrationSize: 48,
-              illustration: Icon(Icons.warning_rounded, color: AppColors.of(context).grey700, size: 48),
+              illustration: Icon(
+                Icons.warning_rounded,
+                color: AppColors.of(context).grey700,
+                size: 48,
+              ),
               button: AppButton.text(label: 'Retry', onPressed: vm.refresh, view: E),
             );
     } else {

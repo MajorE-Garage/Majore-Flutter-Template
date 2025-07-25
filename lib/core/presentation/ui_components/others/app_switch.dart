@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/presentation/presentation.dart';
+import '../../presentation.dart';
 
 class AppSwitch extends StatelessWidget {
   final bool active;
@@ -31,7 +31,8 @@ class AppSwitch extends StatelessWidget {
           duration: const Duration(milliseconds: 400),
           child: Container(
             // alignment: Alignment.center,
-            height: 16, width: 16,
+            height: 16,
+            width: 16,
             // constraints: const BoxConstraints.(),
             decoration: BoxDecoration(
               color: active ? colors.attitudeSuccessDark : colors.grey600,

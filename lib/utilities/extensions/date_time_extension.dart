@@ -43,15 +43,13 @@ extension DateTimeExtension on DateTime {
     DateTime localDateTime = utcDateTime.toLocal();
 
     // Format the local time to ISO 8601
-    String localTime =
-        DateFormat('yyyy-MM-ddTHH:mm:ss.SSS').format(localDateTime);
+    String localTime = DateFormat('yyyy-MM-ddTHH:mm:ss.SSS').format(localDateTime);
 
     // Add timezone offset
     Duration offset = localDateTime.timeZoneOffset;
     String offsetSign = offset.isNegative ? '-' : '+';
     String offsetHours = offset.inHours.abs().toString().padLeft(2, '0');
-    String offsetMinutes =
-        (offset.inMinutes % 60).abs().toString().padLeft(2, '0');
+    String offsetMinutes = (offset.inMinutes % 60).abs().toString().padLeft(2, '0');
 
     return '$localTime$offsetSign$offsetHours:$offsetMinutes';
   }

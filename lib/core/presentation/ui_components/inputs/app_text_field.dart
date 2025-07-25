@@ -2,8 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_icon_button.dart';
+import '../../presentation.dart';
 
 class AppTextField extends StatefulWidget {
   const AppTextField({
@@ -161,7 +160,9 @@ class _AppTextFieldState extends State<AppTextField> {
           onChanged: widget.onChanged,
           onTap: widget.onTap,
           onEditingComplete: widget.onEditComplete ?? () => FocusScope.of(context).nextFocus(),
-          style: styles.value16Medium.copyWith(letterSpacing: (!_visible && widget.controller.text.isNotEmpty) ? 7 : 0),
+          style: styles.value16Medium.copyWith(
+            letterSpacing: (!_visible && widget.controller.text.isNotEmpty) ? 7 : 0,
+          ),
           inputFormatters: widget.formatters,
           textAlignVertical: TextAlignVertical.center,
           cursorColor: colors.grey800,
@@ -177,7 +178,10 @@ class _AppTextFieldState extends State<AppTextField> {
                 ? null
                 : Padding(
                     padding: const EdgeInsets.only(left: 16, right: 8),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [widget.prefix!]),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [widget.prefix!],
+                    ),
                   ),
             suffixIcon: !widget._isSecret && widget.suffix == null
                 ? null
@@ -201,8 +205,8 @@ class _AppTextFieldState extends State<AppTextField> {
                   ),
             contentPadding: const EdgeInsets.all(16),
             errorStyle: styles.body14Medium.copyWith(color: colors.attitudeErrorMain, height: 1),
-            hintStyle: styles.caption12Regular.copyWith(color: colors.textColor.withOpacity(0.5)),
-            prefixStyle: styles.value16Medium.copyWith(color: colors.textColor.withOpacity(0.8)),
+            hintStyle: styles.caption12Regular.copyWith(color: colors.textColor.withAlpha(128)),
+            prefixStyle: styles.value16Medium.copyWith(color: colors.textColor.withAlpha(204)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(width: 0.5, color: colors.grey600),
@@ -213,7 +217,7 @@ class _AppTextFieldState extends State<AppTextField> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(width: 1.2, color: colors.primaryColor.withOpacity(0.5)),
+              borderSide: BorderSide(width: 1.2, color: colors.primaryColor.withAlpha(128)),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

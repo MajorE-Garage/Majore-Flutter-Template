@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/presentation/presentation.dart';
 import '../../../../utilities/mixins/device_clipboard_mixin.dart';
+import '../../presentation.dart';
 
 class AppPinField extends StatefulWidget {
   final int count;
@@ -89,10 +89,7 @@ class AppPinFieldState extends State<AppPinField> with DeviceClipboardMixin {
               controller: _controller,
               keyboardType: widget.textInputType,
               enableInteractiveSelection: !widget.obscureText,
-              style: const TextStyle(
-                fontSize: 1,
-                color: Colors.transparent,
-              ),
+              style: const TextStyle(fontSize: 1, color: Colors.transparent),
               textAlign: TextAlign.center,
               showCursor: false,
               autofocus: true,
@@ -126,9 +123,9 @@ class AppPinFieldState extends State<AppPinField> with DeviceClipboardMixin {
               child: Text(
                 'Paste Code',
                 textAlign: TextAlign.center,
-                style: AppStyles.of(context).body14SemiBold.copyWith(
-                      color: AppColors.of(context).primaryColor,
-                    ),
+                style: AppStyles.of(
+                  context,
+                ).body14SemiBold.copyWith(color: AppColors.of(context).primaryColor),
               ),
             ),
           ),
@@ -213,16 +210,12 @@ class _PinCodeBox extends StatelessWidget {
           width: focus && isBlank ? 0.5 : 2,
           style: BorderStyle.solid,
         ),
-        borderRadius: const BorderRadius.all(
-          Radius.circular(12),
-        ),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
       ),
       child: Center(
         child: Text(
           isBlank ? '-' : display,
-          style: AppStyles.of(context).heading20Bold.copyWith(
-                fontSize: fontSize,
-              ),
+          style: AppStyles.of(context).heading20Bold.copyWith(fontSize: fontSize),
         ),
       ),
     );

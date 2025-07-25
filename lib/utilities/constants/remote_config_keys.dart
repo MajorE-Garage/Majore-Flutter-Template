@@ -1,4 +1,3 @@
-
 // ignore_for_file: non_constant_identifier_names
 
 import 'dart:io';
@@ -16,7 +15,8 @@ class RemoteKeys {
 }
 
 extension RemoteKeysFormat on String {
-  String get withEnv => '${EnvironmentConfig.isProd ? 'prod' : 'staging'}'
+  String get withEnv =>
+      '${EnvironmentConfig.isProd ? 'prod' : 'staging'}'
       '_'
       '${Platform.isIOS ? 'ios' : 'android'}'
       '_'

@@ -9,9 +9,7 @@ import 'analytics_service.dart';
 class FirebaseAnalyticsService extends AnalyticsService {
   final FirebaseAnalytics firebaseAnalytics;
 
-  FirebaseAnalyticsService({
-    required this.firebaseAnalytics,
-  });
+  FirebaseAnalyticsService({required this.firebaseAnalytics});
 
   @override
   FutureOr<void> logInUser(AppUser user) async {
@@ -31,10 +29,7 @@ class FirebaseAnalyticsService extends AnalyticsService {
   }
 
   @override
-  FutureOr<void> logEvent(
-    String name, {
-    Map<String, Object>? properties,
-  }) async {
+  FutureOr<void> logEvent(String name, {Map<String, Object>? properties}) async {
     if (!isRecording) return;
     /*  //? Log on MixPanel
     mixPanel.track(name, properties: properties); */
@@ -42,17 +37,13 @@ class FirebaseAnalyticsService extends AnalyticsService {
     // Replaced all whitespace with '_' for firebase compatibility.
     final firebaseEventName = name.replaceAll(RegExp(r'\s\b|\b\s'), '_');
     firebaseAnalytics
-        .logEvent(
-          name: firebaseEventName,
-          parameters: properties,
-        )
+        .logEvent(name: firebaseEventName, parameters: properties)
         .catchError((_) => null);
   }
 
   @override
-  NavigatorObserver get navigatorObserver => isRecording
-      ? FirebaseAnalyticsObserver(analytics: firebaseAnalytics)
-      : NavigatorObserver();
+  NavigatorObserver get navigatorObserver =>
+      isRecording ? FirebaseAnalyticsObserver(analytics: firebaseAnalytics) : NavigatorObserver();
 
   @override
   Future<void> flushLogUpload() async {}

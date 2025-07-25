@@ -42,143 +42,142 @@ class AppStyles extends ThemeExtension<AppStyles> {
   final TextStyle label14Regular;
   final TextStyle hint12Medium;
 
-  AppStyles({
-    required this.colors,
-    required this.headingFontFamily,
-    required this.bodyFontFamily,
-  })  :
-        // Headings
-        heading20Regular = TextStyle(
-          fontFamily: headingFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 20,
-          height: 32 / 20,
-          color: colors.textColor,
-        ),
-        heading20Semibold = TextStyle(
-          fontFamily: headingFontFamily,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-          height: 32 / 20,
-          color: colors.textColor,
-        ),
-        heading20Bold = TextStyle(
-          fontFamily: headingFontFamily,
-          fontWeight: FontWeight.w700,
-          fontSize: 20,
-          height: 32 / 20,
-          color: colors.textColor,
-        ),
-        // Body
-        body16Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 16,
-          height: 24 / 16,
-          color: colors.textColor,
-        ),
-        body16Medium = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w500,
-          fontSize: 16,
-          height: 24 / 16,
-          color: colors.textColor,
-        ),
-        body16SemiBold = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
-          height: 24 / 16,
-          color: colors.textColor,
-        ),
-        body16Bold = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w700,
-          fontSize: 16,
-          height: 24 / 16,
-          color: colors.textColor,
-        ),
-        body14Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 14,
-          height: 20 / 14,
-          color: colors.textColor,
-        ),
-        body14Medium = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w500,
-          fontSize: 14,
-          height: 20 / 14,
-          color: colors.textColor,
-        ),
-        body14SemiBold = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          height: 20 / 14,
-          color: colors.textColor,
-        ),
-        body14Bold = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-          height: 20 / 14,
-          color: colors.textColor,
-        ),
+  AppStyles({required this.colors, required this.headingFontFamily, required this.bodyFontFamily})
+    : // Headings
+      heading20Regular = TextStyle(
+        fontFamily: headingFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 20,
+        height: 32 / 20,
+        color: colors.textColor,
+      ),
+      heading20Semibold = TextStyle(
+        fontFamily: headingFontFamily,
+        fontWeight: FontWeight.w600,
+        fontSize: 20,
+        height: 32 / 20,
+        color: colors.textColor,
+      ),
+      heading20Bold = TextStyle(
+        fontFamily: headingFontFamily,
+        fontWeight: FontWeight.w700,
+        fontSize: 20,
+        height: 32 / 20,
+        color: colors.textColor,
+      ),
+      // Body
+      body16Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 16,
+        height: 24 / 16,
+        color: colors.textColor,
+      ),
+      body16Medium = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w500,
+        fontSize: 16,
+        height: 24 / 16,
+        color: colors.textColor,
+      ),
+      body16SemiBold = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        height: 24 / 16,
+        color: colors.textColor,
+      ),
+      body16Bold = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        height: 24 / 16,
+        color: colors.textColor,
+      ),
+      body14Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 14,
+        height: 20 / 14,
+        color: colors.textColor,
+      ),
+      body14Medium = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
+        height: 20 / 14,
+        color: colors.textColor,
+      ),
+      body14SemiBold = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+        height: 20 / 14,
+        color: colors.textColor,
+      ),
+      body14Bold = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w700,
+        fontSize: 14,
+        height: 20 / 14,
+        color: colors.textColor,
+      ),
 
-        // Subtitle
-        subtitle15Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 15,
-          height: 20 / 15,
-          color: colors.textColor,
-        ),
-        subtitle15Light = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w300,
-          fontSize: 15,
-          height: 20 / 15,
-          color: colors.textColor,
-        ),
-        caption12Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 12,
-          color: colors.textColor,
-        ),
-        overline10Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 10,
-          color: colors.textColor,
-        ),
-        value16Medium = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 16,
-          height: 24 / 16,
-          color: colors.textColor,
-        ),
-        label14Regular = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w400,
-          fontSize: 14,
-          height: 20 / 14,
-          color: colors.textColor,
-        ),
-        hint12Medium = TextStyle(
-          fontFamily: bodyFontFamily,
-          fontWeight: FontWeight.w500,
-          fontSize: 12,
-          height: 16 / 12,
-          color: colors.textColor,
-        );
+      // Subtitle
+      subtitle15Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 15,
+        height: 20 / 15,
+        color: colors.textColor,
+      ),
+      subtitle15Light = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w300,
+        fontSize: 15,
+        height: 20 / 15,
+        color: colors.textColor,
+      ),
+      caption12Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 12,
+        color: colors.textColor,
+      ),
+      overline10Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 10,
+        color: colors.textColor,
+      ),
+      value16Medium = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 16,
+        height: 24 / 16,
+        color: colors.textColor,
+      ),
+      label14Regular = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w400,
+        fontSize: 14,
+        height: 20 / 14,
+        color: colors.textColor,
+      ),
+      hint12Medium = TextStyle(
+        fontFamily: bodyFontFamily,
+        fontWeight: FontWeight.w500,
+        fontSize: 12,
+        height: 16 / 12,
+        color: colors.textColor,
+      );
 
   @override
-  ThemeExtension<AppStyles> copyWith(
-      {AppColors? colors, String? headingFontFamily, String? bodyFontFamily}) {
+  ThemeExtension<AppStyles> copyWith({
+    AppColors? colors,
+    String? headingFontFamily,
+    String? bodyFontFamily,
+  }) {
     return AppStyles(
       colors: colors ?? this.colors,
       headingFontFamily: headingFontFamily ?? this.headingFontFamily,
@@ -187,8 +186,7 @@ class AppStyles extends ThemeExtension<AppStyles> {
   }
 
   @override
-  ThemeExtension<AppStyles> lerp(
-      covariant ThemeExtension<AppStyles>? other, double t) {
+  ThemeExtension<AppStyles> lerp(covariant ThemeExtension<AppStyles>? other, double t) {
     return other ?? this;
   }
 }

@@ -5,7 +5,8 @@ import '../domain/models/user_model.dart';
 class AuthenticationRepo extends AppRepository {
   final RestNetworkService _networkService;
 
-  AuthenticationRepo({required RestNetworkService networkService}) : _networkService = networkService;
+  AuthenticationRepo({required RestNetworkService networkService})
+    : _networkService = networkService;
 
   Future<DataResponse<LoginInfo>> login({required String email, required String password}) =>
       runDataWithGuard(() async {

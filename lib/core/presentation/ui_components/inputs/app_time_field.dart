@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/presentation/presentation.dart';
-import '../buttons/app_icon_button.dart';
-import 'app_text_field.dart';
+import '../../presentation.dart';
 
 class AppTimeField extends StatelessWidget {
   AppTimeField({
@@ -71,7 +69,8 @@ class TimeFieldController extends TextEditingController {
 
   bool _pickerIsOpen = false;
 
-  TimeFieldController({TimeOfDay? initialTime, DateFormat? format}) : _format = format ?? DateFormat('hh:mm a');
+  TimeFieldController({TimeOfDay? initialTime, DateFormat? format})
+    : _format = format ?? DateFormat('hh:mm a');
 
   TimeOfDay? get selectedTime => _time;
 

@@ -1,1 +1,31 @@
-{}
+{
+  "ar": [
+    "select",
+    "cancel",
+    "retry",
+    "refresh",
+    "email",
+    "password",
+    "login"
+  ],
+
+  "fr": [
+    "select",
+    "cancel",
+    "retry",
+    "refresh",
+    "email",
+    "password",
+    "login"
+  ],
+
+  "sw": [
+    "select",
+    "cancel",
+    "retry",
+    "refresh",
+    "email",
+    "password",
+    "login"
+  ]
+}

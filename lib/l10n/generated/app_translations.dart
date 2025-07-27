@@ -107,6 +107,48 @@ abstract class AppTranslations {
   /// In en, this message translates to:
   /// **'Majore MVVM Template'**
   String get appName;
+
+  /// Auto-generated for: Select
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get select;
+
+  /// Auto-generated for: Cancel
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Auto-generated for: Retry
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// Auto-generated for: Refresh
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// Auto-generated for: Email
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// Auto-generated for: Password
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// Auto-generated for: Login
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
 }
 
 class _AppTranslationsDelegate extends LocalizationsDelegate<AppTranslations> {

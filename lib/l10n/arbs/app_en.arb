@@ -3,6 +3,33 @@
   "appName": "Majore MVVM Template",
   "@appName": {
     "description": "The name of the application"
+  },
+  "select": "Select",
+  "@select": {
+    "description": "Auto-generated for: Select"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Auto-generated for: Cancel"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Auto-generated for: Retry"
+  },
+  "refresh": "Refresh",
+  "@refresh": {
+    "description": "Auto-generated for: Refresh"
+  },
+  "email": "Email",
+  "@email": {
+    "description": "Auto-generated for: Email"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Auto-generated for: Password"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Auto-generated for: Login"
   }
-  
-} 
+}

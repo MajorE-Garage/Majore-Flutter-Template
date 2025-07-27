@@ -10,4 +10,25 @@ class AppTranslationsFr extends AppTranslations {
 
   @override
   String get appName => 'Modèle Majore MVVM';
+
+  @override
+  String get select => 'Select';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get login => 'Login';
 }

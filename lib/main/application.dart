@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/presentation/presentation.dart';
-import '../core/presentation/navigation/app_router.dart';
 import '../services/app_lifecycle_service/app_lifecycle_service.dart';
 import '../services/remote_config/remote_config_service.dart';
 import '../utilities/mixins/custom_will_pop_scope_mixin.dart';
@@ -15,8 +14,7 @@ class ThisApplication extends StatefulWidget {
   State<ThisApplication> createState() => _ThisApplicationState();
 }
 
-class _ThisApplicationState extends State<ThisApplication>
-    with CustomWillPopScopeMixin {
+class _ThisApplicationState extends State<ThisApplication> with CustomWillPopScopeMixin {
   @override
   void initState() {
     AppLifecycleService.instance.initialise();
@@ -45,7 +43,6 @@ class _ThisApplicationState extends State<ThisApplication>
       builder: (themeManager, _) => PopScope(
         canPop: false,
         onPopInvokedWithResult: onSecondBackPop,
-        // child: MaterialApp(
         child: MaterialApp.router(
           theme: themeManager.lightTheme,
           darkTheme: themeManager.darkTheme,
@@ -53,12 +50,7 @@ class _ThisApplicationState extends State<ThisApplication>
           debugShowCheckedModeBanner: !EnvironmentConfig.isProd,
           title: EnvironmentConfig.appName,
           localizationsDelegates: const [],
-          // initialRoute: AppRoutes.splashRoute,
-          // routes: AppRoutes.routes,
-          // onGenerateRoute: AppRoutes.generateRoutes,
-          // navigatorKey: AppNavigator.mainKey,
-          // navigatorObservers: [AppNavigatorObserver.instance],
-          routerConfig: AppRouter.goRouter,
+          routerConfig: AppGoRouter.goRouter,
           builder: (context, widget) {
             if (kReleaseMode) {
               const errT = Text('A rendering error occured');

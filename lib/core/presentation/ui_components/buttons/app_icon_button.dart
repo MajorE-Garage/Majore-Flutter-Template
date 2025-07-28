@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../../../services/analytics_service/analytics_service.dart';
 import '../../presentation.dart';
 
 class AppIconButton extends StatelessWidget {
@@ -10,6 +10,8 @@ class AppIconButton extends StatelessWidget {
     this.size = 24,
     this.color,
     this.circled = true,
+    this.analyticsName,
+    this.analyticsType,
   }) : _child = child,
        _icon = null,
        iconColor = null,
@@ -24,6 +26,8 @@ class AppIconButton extends StatelessWidget {
     this.iconColor,
     this.color,
     this.circled = true,
+    this.analyticsName,
+    this.analyticsType,
   }) : _child = null,
        _icon = icon,
        assert(
@@ -38,14 +42,26 @@ class AppIconButton extends StatelessWidget {
   final Color? color;
   final double iconSize;
   final Color? iconColor;
+  
   final bool circled;
+  final String? analyticsName;
+  final String? analyticsType;
 
   @override
   Widget build(BuildContext context) {
     if (!circled) {
       return InkResponse(
         // TODO(Toyyib): Add analytics for icon buttons
-        onTap: onPressed,
+        onTap:(){
+          onPressed?.call();
+          AnalyticsService.instance.logEvent(
+            'Icon Button Press',
+            properties: {
+              'Name': analyticsName ?? 'Unknown',
+              'Type': analyticsType ?? 'Icon Button',
+            },
+          );
+        },
         child:
             _child ??
             Icon(_icon, color: iconColor ?? AppColors.of(context).primaryColor, size: iconSize),
@@ -55,7 +71,16 @@ class AppIconButton extends StatelessWidget {
     final color = this.color ?? AppColors.of(context).secondaryColor;
 
     return InkResponse(
-      onTap: onPressed,
+      onTap:(){
+        onPressed?.call();
+        AnalyticsService.instance.logEvent(
+          'Icon Button Press',
+          properties: {
+            'Name': analyticsName ?? 'Unknown',
+            'Type': analyticsType ?? 'Icon Button',
+          },
+        );
+      },
       child: Container(
         height: size,
         width: size,

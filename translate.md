@@ -3,6 +3,139 @@
 ## Overview
 The `translate.py` script automates the internationalization process for Flutter/Dart codebases. It finds user-facing strings, adds them to ARB files, generates localization files, and replaces hardcoded strings with translation getters.
 
+## Feature Set
+
+### Core Functionality
+1. **Automated String Detection**
+   - Scans all Dart files in the project
+   - Identifies user-facing strings in Text, SelectableText, Tooltip, and other widgets
+   - Detects strings in property assignments (label, hint, heading, body, title, etc.)
+   - Handles multi-line strings with triple quotes
+   - Supports both single and double quoted strings
+
+2. **Smart String Filtering**
+   - Excludes technical patterns (URLs, API endpoints, file paths, etc.)
+   - Excludes code patterns (function calls, brackets, etc.)
+   - Excludes variable names (camelCase, snake_case)
+   - Excludes constants (UPPER_CASE patterns)
+   - Excludes single letters (A, B, C, etc.)
+   - Excludes numbers-only strings (1, 2, 123456789, etc.)
+   - Excludes punctuation-only strings (!, ?, etc.)
+   - Includes strings with 2+ characters (Hi, No, Yes, etc.)
+
+3. **ARB File Management**
+   - Automatically adds new strings to the base ARB file
+   - Generates unique keys for each string
+   - Creates backup before modifications
+   - Automatic cleanup of backup files after successful operations
+   - Error recovery with backup restoration
+   - Handles existing translations without duplication
+
+4. **Code Replacement**
+   - Replaces hardcoded strings with `context.translations.keyName`
+   - Handles all widget types: Text, SelectableText, Tooltip, etc.
+   - Handles property assignments: label, hint, heading, body, title, etc.
+   - Supports multi-line string replacement
+   - Preserves code formatting and structure
+   - Idempotent operations (safe to run multiple times)
+
+5. **Localization Generation**
+   - Runs `flutter gen-l10n` to generate localization files
+   - Updates generated translation classes
+   - Ensures all new strings are available in code
+
+6. **Comprehensive Reporting**
+   - Shows total files scanned and processed
+   - Lists new strings added to ARB
+   - Lists existing strings found
+   - Shows detailed string locations with file paths and line numbers
+   - Provides clickable file paths in reports
+   - Shows total replacements made
+
+7. **Unprocessed String Management**
+   - Filters unprocessed strings by category
+   - Excludes expected technical patterns from reports
+   - Shows only strings that might need manual attention
+   - Categorizes by reason: String Concatenation, Too Short, etc.
+
+8. **TODO Comment System**
+   - Automatically adds Flutter-style TODO comments for user-facing strings that couldn't be processed
+   - Uses format: `// TODO(translation): Translate this string: 'string'`
+   - Only adds TODOs for strings that might be user-facing
+   - Excludes numbers-only strings from TODO comments
+   - Idempotent: won't create duplicate TODOs
+
+9. **Backup Management**
+   - Creates backups before ARB file modifications
+   - Automatic cleanup after successful operations
+   - Error recovery with backup restoration
+   - No orphaned backup files
+
+10. **Idempotent Operations**
+    - Safe to run multiple times
+    - No duplicate string additions
+    - No duplicate TODO comments
+    - Consistent results across runs
+
+### Advanced Features
+11. **Multi-line String Support**
+    - Detects strings spanning multiple lines
+    - Handles triple-quote delimiters
+    - Preserves formatting in multi-line strings
+
+12. **String Type Detection**
+    - Automatically determines string context
+    - Handles different widget types appropriately
+    - Supports property-based string detection
+
+13. **Key Generation**
+    - Creates human-readable keys from strings
+    - Ensures uniqueness with counter suffixes
+    - Handles special characters and spaces
+    - Avoids Dart keywords
+
+14. **Error Handling**
+    - Graceful handling of file read/write errors
+    - Backup restoration on failures
+    - Detailed error messages with colored output
+    - Continues processing other files on individual failures
+
+15. **Performance Optimization**
+    - Groups strings by file to minimize file operations
+    - Sorts replacements to avoid line number shifts
+    - Efficient regex patterns for string detection
+
+### User Experience
+16. **Colored Output**
+    - Green for success messages
+    - Yellow for warnings and backups
+    - Red for errors
+    - Blue for information
+    - Purple for detailed reports
+
+17. **Detailed Progress**
+    - Shows scanning progress
+    - Reports file processing status
+    - Provides step-by-step feedback
+
+18. **Actionable Reports**
+    - Clear next steps for users
+    - Identifies files that need manual review
+    - Provides specific guidance for unprocessed strings
+
+### Quality Assurance
+19. **Comprehensive Testing**
+    - Handles edge cases in string detection
+    - Robust regex patterns for various code styles
+    - Safe string replacement without breaking code
+
+20. **Maintainability**
+    - Well-documented code structure
+    - Modular design for easy extension
+    - Clear separation of concerns
+
+This feature set ensures the script is production-ready, handles all common Flutter internationalization scenarios, and provides a smooth developer experience for migrating existing code to use Flutter's localization system. 
+
 ## Assumptions & Patterns
 
 ### User-Facing String Patterns

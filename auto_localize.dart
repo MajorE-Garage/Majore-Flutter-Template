@@ -296,8 +296,11 @@ List<StringClassification> extractStringsFromFile(String filePath) {
     for (final match in doubleQuoteMatches) {
       final value = match.group(1) ?? '';
       if (value.isNotEmpty) {
-        final isStringLine = verifyStringLine(line, lines, i);
-        if (!isStringLine) continue;
+        final isStringLine = verifyStringLine(value, line, lines, i);
+        if (!isStringLine) 
+        
+          continue;
+        
         classifications.add(
           StringClassification(
             value: value,
@@ -313,8 +316,17 @@ List<StringClassification> extractStringsFromFile(String filePath) {
     for (final match in singleQuoteMatches) {
       final value = match.group(1) ?? '';
       if (value.isNotEmpty) {
-        final isStringLine = verifyStringLine(line, lines, i);
-        if (!isStringLine) continue;
+        // Debug: Check if this is from comprehensive test cases
+        if (filePath.contains('comprehensive_test_cases')) {
+          printColoredLn('DEBUG: Found single-quoted string: "$value"', Colors.green);
+        }
+        final isStringLine = verifyStringLine(value, line, lines, i);
+        if (!isStringLine) {
+          if (filePath.contains('comprehensive_test_cases')) {
+            printColoredLn('DEBUG: Rejected single-quoted string: "$value"', Colors.red);
+          }
+          continue;
+        }
         classifications.add(
           StringClassification(
             value: value,
@@ -329,7 +341,7 @@ List<StringClassification> extractStringsFromFile(String filePath) {
   return classifications;
 }
 
-bool verifyStringLine(String line, List<String> lines, int i) {
+bool verifyStringLine(String stringValue, String line, List<String> lines, int i) {
   // Check for RegExp patterns first
   if (isRegExpPattern(line)) {
     return false;
@@ -339,7 +351,7 @@ bool verifyStringLine(String line, List<String> lines, int i) {
     return false;
   }
   // Check for technical patterns
-  if (isTechnicalLine(line)) return false;
+  if (isTechnicalLine(stringValue)) return false;
 
   // Check for logger patterns in current line and previous lines
   bool isLoggerLine = isLoggerOrAnalyticsString(line);
@@ -478,7 +490,11 @@ bool isTechnicalLine(String line) {
   }
 
   // Check for code patterns (parentheses, brackets, etc.)
-  if (line.contains('(') && line.contains(')') && !line.contains('\${')) {
+  if (((line.contains('(') && line.contains(')')) || 
+       (line.contains('[') && line.contains(']')) || 
+       (line.contains('{') && line.contains('}')) || 
+       (line.contains('<') && line.contains('>'))) && 
+      !line.contains('\${')) {
     return true;
   }
 
@@ -693,11 +709,26 @@ void replaceStringsInFiles(List<StringClassification> stringsToReplace) {
       if (lineIndex >= 0 && lineIndex < lines.length) {
         final line = lines[lineIndex];
 
-        // Replace the string with translation call
-        final replacement = line.replaceAll(
-          '"${str.value}"',
-          'context.translations.${str.translationKey ?? generateTranslationKey(str.value)}',
-        );
+        // Replace the string with translation call (handle both single and double quotes)
+        String replacement = line;
+        
+        // Try to replace double-quoted string
+        final doubleQuotedPattern = '"${str.value}"';
+        if (replacement.contains(doubleQuotedPattern)) {
+          replacement = replacement.replaceAll(
+            doubleQuotedPattern,
+            'context.translations.${str.translationKey ?? generateTranslationKey(str.value)}',
+          );
+        }
+        
+        // Try to replace single-quoted string
+        final singleQuotedPattern = "'${str.value}'";
+        if (replacement.contains(singleQuotedPattern)) {
+          replacement = replacement.replaceAll(
+            singleQuotedPattern,
+            'context.translations.${str.translationKey ?? generateTranslationKey(str.value)}',
+          );
+        }
 
         lines[lineIndex] = replacement;
       }

@@ -16,7 +16,7 @@ import 'dart:convert';
 /// Files and directories to exclude from scanning
 final excludedFiles = [
   'lib/l10n/',
-  'lib/constants/',
+  'constants/',
   'environment_config.dart',
   '.dart_tool/',
   '.git/',
@@ -165,6 +165,68 @@ bool shouldExcludeFile(String filePath) {
   return excludedFiles.any((excluded) => filePath.contains(excluded));
 }
 
+/// Detects multiline concatenated string blocks and returns their metadata
+///
+/// This method identifies patterns like:
+///   String get withEnv =>
+///     '${EnvironmentConfig.isProd ? 'prod' : 'staging'}'
+///     '_'
+///     '${Platform.isIOS ? 'ios' : 'android'}'
+///     '_'
+///     '$this';
+///
+/// Detection logic:
+/// 1. Look backwards to find the start of the block (skip empty lines)
+/// 2. Check if the previous line ends with '=>' or '=' (getter/setter syntax)
+/// 3. Scan forward to find consecutive string literal lines
+/// 4. Count how many string lines we have and check for variables
+///
+/// Returns a map with:
+/// - 'start': Line index where the string block begins
+/// - 'end': Line index where the string block ends (exclusive)
+/// - 'hasVariable': Whether any line contains variable interpolation
+///
+/// Returns null if this is not a multiline concatenated string block
+Map<String, dynamic>? getMultilineConcatenatedStringBlock(List<String> lines, int index) {
+  // Step 1: Find the start of the block by going backwards, skipping empty lines
+  int i = index;
+  while (i > 0 && lines[i].trim().isEmpty) i--;
+  if (i == 0) return null;
+
+  // Step 2: Check if the previous line indicates a getter/setter (ends with => or =)
+  String prev = lines[i - 1].trim();
+  if (!(prev.endsWith('=>') || prev.endsWith('='))) return null;
+
+  // Step 3: Scan forward to find consecutive string literal lines
+  int j = i;
+  int stringLines = 0;
+  bool hasVariable = false;
+  while (j < lines.length) {
+    String l = lines[j].trim();
+    if (l.isEmpty) {
+      j++;
+      continue;
+    } // Skip empty lines
+
+    // Check if this line is a string literal (single or double quoted)
+    if ((l.startsWith("'") && l.endsWith("'")) || (l.startsWith('"') && l.endsWith('"'))) {
+      stringLines++;
+      // Check if this string contains variable interpolation
+      if (containsDartVariable(l)) hasVariable = true;
+      j++;
+      continue;
+    }
+    // If we hit a non-string line, we've reached the end of the block
+    break;
+  }
+
+  // Step 4: Only return a block if we found multiple string lines
+  if (stringLines > 1) {
+    return {'start': i, 'end': j, 'hasVariable': hasVariable};
+  }
+  return null;
+}
+
 /// Extract all string literals from a file
 List<StringClassification> extractStringsFromFile(String filePath) {
   final file = File(filePath);
@@ -179,29 +241,63 @@ List<StringClassification> extractStringsFromFile(String filePath) {
     final lineNumber = i + 1;
 
     // Skip lines that already have TO DO(translate) comments
-    if (todoTranslatePattern.hasMatch(line)) continue;
-    
-    // Skip lines that contain technical patterns
-    if (isTechnicalLine(line)) continue;
-    
-    // Check for logger patterns in current line and previous lines
-    bool isLoggerLine = isLoggerOrAnalyticsString(line);
-    if (!isLoggerLine && i > 0) {
-      // Check previous line for logger patterns
-      isLoggerLine = isLoggerOrAnalyticsString(lines[i - 1]);
+    if (todoTranslatePattern.hasMatch(line)) {
+      classifications.add(
+        StringClassification(
+          value: lines[i + 1],
+          instances: [(filePath: filePath, lineNumber: lineNumber + 1)],
+          category: 'old_manual',
+        ),
+      );
+      if (i + 1 < lines.length) {
+        i++; // Skip the next line
+        continue;
+      }
     }
-    if (!isLoggerLine && i > 1) {
-      // Check line before previous for logger patterns
-      isLoggerLine = isLoggerOrAnalyticsString(lines[i - 2]);
+
+    // Skip the next line if this line contains ignore directive
+    if (line.trim().contains('// ignore: auto_localize.')) {
+      if (i + 1 < lines.length) {
+        i++; // Skip the next line
+        continue;
+      }
     }
-    if (isLoggerLine) continue;
-    
+
+    // Detect multiline concatenated strings
+    // This handles cases where strings are split across multiple lines without + operator
+    // Example:
+    //   String get withEnv =>
+    //     '${EnvironmentConfig.isProd ? 'prod' : 'staging'}'
+    //     '_'
+    //     '${Platform.isIOS ? 'ios' : 'android'}'
+    //     '_'
+    //     '$this';
+    final block = getMultilineConcatenatedStringBlock(lines, i);
+    if (block != null) {
+      int start = block['start'];
+      int end = block['end'];
+      // bool hasVariable = block['hasVariable'];
+
+      classifications.add(
+        StringClassification(
+          value: lines[start],
+          instances: [(filePath: filePath, lineNumber: start)],
+          category: 'manual',
+        ),
+      );
+
+      // Skip to the end of the block to avoid processing the same lines again
+      i = end - 1;
+      continue;
+    }
 
     // Extract double-quoted strings
     final doubleQuoteMatches = doubleQuotePattern.allMatches(line);
     for (final match in doubleQuoteMatches) {
       final value = match.group(1) ?? '';
       if (value.isNotEmpty) {
+        final isStringLine = verifyStringLine(line, lines, i);
+        if (!isStringLine) continue;
         classifications.add(
           StringClassification(
             value: value,
@@ -217,6 +313,8 @@ List<StringClassification> extractStringsFromFile(String filePath) {
     for (final match in singleQuoteMatches) {
       final value = match.group(1) ?? '';
       if (value.isNotEmpty) {
+        final isStringLine = verifyStringLine(line, lines, i);
+        if (!isStringLine) continue;
         classifications.add(
           StringClassification(
             value: value,
@@ -231,67 +329,99 @@ List<StringClassification> extractStringsFromFile(String filePath) {
   return classifications;
 }
 
+bool verifyStringLine(String line, List<String> lines, int i) {
+  // Check for RegExp patterns first
+  if (isRegExpPattern(line)) {
+    return false;
+  }
+  // Check for comment lines
+  if (isCommentLine(line)) {
+    return false;
+  }
+  // Check for technical patterns
+  if (isTechnicalLine(line)) return false;
+
+  // Check for logger patterns in current line and previous lines
+  bool isLoggerLine = isLoggerOrAnalyticsString(line);
+  if (!isLoggerLine && i > 0) {
+    // Check previous line for logger patterns
+    isLoggerLine = isLoggerOrAnalyticsString(lines[i - 1]);
+  }
+  if (!isLoggerLine && i > 1) {
+    // Check line before previous for logger patterns
+    isLoggerLine = isLoggerOrAnalyticsString(lines[i - 2]);
+  }
+  if (isLoggerLine) return false;
+  return true;
+}
+
 bool isLoggerOrAnalyticsString(String line) {
   // Check for Logger patterns (.severe, .config, .finest, .log, etc.)
-  if (RegExp(r'\.(severe|shout|warning|info|config|fine|finer|finest|log)', caseSensitive: false).hasMatch(line)) {
+  if (RegExp(
+    r'\.(severe|shout|warning|info|config|fine|finer|finest|log)',
+    caseSensitive: false,
+  ).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for Logger class usage
   if (RegExp(r'Logger\.', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for AnalyticsService.log
   if (RegExp(r'AnalyticsService\.log', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for common logging patterns
   if (RegExp(r'\.log\(', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for print statements (often used for debugging)
   if (RegExp(r'print\s*\(', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for debug/error logging patterns
   if (RegExp(r'(debug|error|warn|info|trace)\s*\(', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for analytics tracking patterns
   if (RegExp(r'\.track\(|\.event\(|\.logEvent\(', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for console logging patterns
   if (RegExp(r'console\.(log|warn|error|info)', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for Firebase Analytics patterns
   if (RegExp(r'FirebaseAnalytics\.|Analytics\.', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for crashlytics patterns
   if (RegExp(r'Crashlytics\.|crashlytics\.', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for custom logger patterns
   if (RegExp(r'logger\.|_logger\.', caseSensitive: false).hasMatch(line)) {
     return true;
   }
-  
+
   // Check for logging method calls
-  if (RegExp(r'\.(logError|logWarning|logInfo|logDebug|logTrace)', caseSensitive: false).hasMatch(line)) {
+  if (RegExp(
+    r'\.(logError|logWarning|logInfo|logDebug|logTrace)',
+    caseSensitive: false,
+  ).hasMatch(line)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -300,139 +430,99 @@ bool isTechnicalLine(String line) {
   // Technical patterns to exclude (based on translate.py)
   final technicalPatterns = [
     // API/Network patterns
-    'http://', 'https://', 'api/', 'endpoint', 'token', 'bearer', 'authorization',
-    
+    'http://', 'https://', 'api/', 'endpoint', 'token', 'bearer', 'authorization', 'multipart',
+
     // JSON/Serialization patterns
     'toMap', 'fromMap', 'json', 'serialization', 'deserialization',
-    
+
     // Flutter/Dart technical patterns
     'dart:', 'package:', 'import', 'export', 'class', 'enum', 'typedef',
     'const', 'final', 'var', 'String', 'int', 'bool', 'double', 'List', 'Map',
     'Widget', 'BuildContext', 'MaterialApp', 'Scaffold', 'Container', 'Column',
     'Row', 'Text', 'Button', 'AppBar', 'ListView',
-    
+
     // Debug/Development patterns
-    'debug', 'test', 'mock', 'stub', 'fixture', 'example', 'TODO', 'FIXME', 'HACK', 'NOTE', 'XXX',
-    
+    'debug', 'mock', 'stub', 'fixture', 'example', 'TODO', 'FIXME', 'HACK', 'NOTE', 'XXX',
+
     // File/Path patterns
     'assets/', 'lib/', 'test/', 'android/', 'ios/', '.dart', '.arb', '.json', '.yaml', '.yml',
-    
+
     // Variable/Property patterns
     'controller', 'key', 'value', 'data', 'response', 'request', 'status', 'code', 'id',
-    'type', 'name', 'email', 'password', 'phone', 'address', 'url', 'uri', 'path', 'file',
+    'type', 'name', 'url', 'uri', 'path', 'file',
     'folder', 'directory',
-    
+
     // Error/Exception patterns
     'exception', 'error', 'failure', 'timeout', 'network', 'server', 'client',
     'unauthorized', 'forbidden', 'not_found', 'bad_request', 'internal_server_error',
-    
+
     // Date/Time patterns
     'yyyy-MM-dd', 'HH:mm:ss', 'ISO', 'UTC', 'timestamp', 'date', 'time', 'datetime',
-    
+
     // Currency/Number patterns
     'currency', 'amount', 'price', 'cost', 'total', 'sum', 'count', 'number',
     'decimal', 'integer', 'float', 'double',
-    
+
     // UI/UX patterns
     'color', 'style', 'theme', 'font', 'size', 'width', 'height', 'padding',
     'margin', 'border', 'radius', 'shadow', 'gradient', 'opacity', 'alpha', 'rgb', 'hex',
   ];
-  
+
   final lineLower = line.toLowerCase();
-  
+
   // Check for technical patterns
   for (final pattern in technicalPatterns) {
     if (lineLower.contains(pattern.toLowerCase())) {
-      // Skip common user-facing words that happen to be in technical patterns
-      final exceptionWords = ['email', 'password', 'name', 'phone', 'address', 'type', 'text'];
-      bool hasExceptionWord = false;
-      for (final exceptionWord in exceptionWords) {
-        if (lineLower.contains(exceptionWord)) {
-          hasExceptionWord = true;
-          break;
-        }
-      }
-      if (!hasExceptionWord) {
-        return true;
-      }
+      return true;
     }
   }
-  
-  // Check for comment lines
-  if (isCommentLine(line)) {
-    return true;
-  }
-  
+
   // Check for code patterns (parentheses, brackets, etc.)
   if (line.contains('(') && line.contains(')') && !line.contains('\${')) {
     return true;
   }
-  
+
+  return false;
+}
+
+/// Check if a line contains RegExp patterns that should be excluded
+bool isRegExpPattern(String line) {
+  // Check for RegExp constructor patterns
+  if (RegExp(r'RegExp\s*\(', caseSensitive: false).hasMatch(line)) {
+    return true;
+  }
+
+  // Check for raw string RegExp patterns (r"...")
+  if (RegExp(
+    r'r\s*["'
+    ']',
+    caseSensitive: false,
+  ).hasMatch(line)) {
+    return true;
+  }
+
+  // Check for RegExp literal patterns
+  if (RegExp(r'/\s*[^/]+\s*/', caseSensitive: false).hasMatch(line)) {
+    return true;
+  }
+
   return false;
 }
 
 /// Check if a line is a comment
 bool isCommentLine(String line) {
   final trimmedLine = line.trim();
-  return trimmedLine.startsWith('//') || 
-         trimmedLine.startsWith('/*') || 
-         trimmedLine.startsWith('*') ||
-         trimmedLine.startsWith('///') ||
-         trimmedLine.startsWith('/**');
-}
-
-/// Classify strings based on the specified rules
-List<StringClassification> classifyStrings(List<StringClassification> rawStrings) {
-  final classified = <StringClassification>[];
-
-  for (final str in rawStrings) {
-    String category = 'unknown';
-
-    // Check if already in ARB file
-    if (isStringInArb(str.value)) {
-      category = 'replace';
-    }
-    // Check if length <= 1
-    else if (str.value.length <= 1) {
-      category = 'exempt';
-    }
-    // Check if only numbers and special characters
-    else if (isOnlyNumbersAndSpecial(str.value)) {
-      category = 'exempt';
-    }
-    // Check if snake_case or camelCase
-    else if (snakeCasePattern.hasMatch(str.value) || camelCasePattern.hasMatch(str.value)) {
-      category = 'exempt';
-    }
-    // Check if hex code
-    else if (isHexCode(str.value)) {
-      category = 'exempt';
-    }
-    // Check if technical/code pattern
-    else if (isTechnicalPattern(str.value)) {
-      category = 'exempt';
-    }
-    // Check if concatenated string
-    else if (isConcatenatedString(str.value)) {
-      category = 'manual';
-    }
-    // Default to process
-    else {
-      category = 'process';
-    }
-
-    classified.add(
-      StringClassification(value: str.value, instances: str.instances, category: category),
-    );
-  }
-
-  return classified;
+  return trimmedLine.startsWith('//') ||
+      trimmedLine.startsWith('/*') ||
+      trimmedLine.startsWith('*') ||
+      trimmedLine.startsWith('///') ||
+      trimmedLine.startsWith('/**');
 }
 
 /// Check if string contains only numbers and special characters
 bool isOnlyNumbersAndSpecial(String value) {
   // Simple check for strings that contain only numbers and common special characters
-  final specialChars = '0123456789 -.,!@#\$%^&*()[]{}|;:"\'<>?/\\`~';
+  final specialChars = '0123456789 -.,!@#\$%^&*()[]{}|;:"\'<>?/\\`~_+';
   return value.split('').every((char) => specialChars.contains(char));
 }
 
@@ -446,8 +536,8 @@ bool isTechnicalPattern(String value) {
   // Constants like API_KEY, USER_ID
   if (RegExp(r'^[A-Z_]+$').hasMatch(value)) return true;
 
-  // Technical identifiers
-  if (RegExp(r'^[a-z]+_[a-z]+_[a-z]+$').hasMatch(value)) return true;
+  // // Technical identifiers
+  // if (RegExp(r'^[a-z]+_[a-z]+_[a-z]+$').hasMatch(value)) return true;
 
   // Pure numbers
   if (RegExp(r'^[0-9]+$').hasMatch(value)) return true;
@@ -672,6 +762,54 @@ void markManualStrings(List<StringClassification> manualStrings) {
   }
 }
 
+/// Classify strings based on the specified rules
+List<StringClassification> classifyStrings(List<StringClassification> rawStrings) {
+  final classified = <StringClassification>[];
+
+  for (final str in rawStrings) {
+    String category = 'unknown';
+
+    // Check if already in ARB file
+    if (isStringInArb(str.value)) {
+      category = 'replace';
+    }
+    // Check if length <= 1
+    else if (str.value.length <= 1) {
+      category = 'exempt';
+    }
+    // Check if only numbers and special characters
+    else if (isOnlyNumbersAndSpecial(str.value)) {
+      category = 'exempt';
+    }
+    // Check if snake_case or camelCase
+    else if (snakeCasePattern.hasMatch(str.value) || camelCasePattern.hasMatch(str.value)) {
+      category = 'exempt';
+    }
+    // Check if hex code
+    else if (isHexCode(str.value)) {
+      category = 'exempt';
+    }
+    // Check if technical/code pattern
+    else if (isTechnicalPattern(str.value)) {
+      category = 'exempt';
+    }
+    // Check if concatenated string
+    else if (isConcatenatedString(str.value)) {
+      category = 'manual';
+    }
+    // Default to process
+    else {
+      category = 'process';
+    }
+
+    classified.add(
+      StringClassification(value: str.value, instances: str.instances, category: category),
+    );
+  }
+
+  return classified;
+}
+
 /// Recursively find all .dart files
 List<String> findAllDartFiles(String directory) {
   final files = <String>[];
@@ -766,7 +904,7 @@ void main() async {
   printColoredLn('${counts['replace'] ?? 0} already in arb - marked for replacement', Colors.green);
   printColoredLn('${counts['exempt'] ?? 0} are not user-facing - ignored', Colors.yellow);
   printColoredLn(
-    '${counts['manual'] ?? 0} are complex strings - manual intervention needed',
+    '${(counts['manual'] ?? 0) + (counts['old_manual'] ?? 0)} are complex strings - manual intervention needed',
     Colors.magenta,
   );
   printColoredLn(
@@ -828,7 +966,7 @@ void main() async {
         replaceStrings.addAll(processStrings);
       } else {
         printColoredLn('flutter gen-l10n failed, restoring backup', Colors.red);
-        // restoreArbBackup(backupPath);
+        restoreArbBackup(backupPath);
         exit(1);
       }
     } catch (e) {

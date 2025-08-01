@@ -204,6 +204,8 @@ class _AppDropdownFieldState<T> extends State<AppDropdownField<T>> {
                     ),
                     widget.icon ??
                         AppIconButton(
+                          label: 'Dropdown',
+                          view: 'Dropdown Field',
                           circled: false,
                           child: Icon(
                             Icons.arrow_drop_down_rounded,

@@ -56,6 +56,8 @@ class AppTimeField extends StatelessWidget {
       isRequired: isRequired,
       validator: _makeValidator(),
       suffix: AppIconButton(
+        label: 'Time',
+        view: 'Time Field',
         circled: false,
         child: Icon(Icons.watch_later_rounded, color: AppColors.of(context).textColor, size: 16),
       ),

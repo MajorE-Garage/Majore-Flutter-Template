@@ -1,0 +1,282 @@
+#!/bin/bash
+
+# Dart Format and Translation Automation Script
+# This script automates translation, formats Dart code, and organizes dependencies
+
+set -e  # Exit on any error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_colored() {
+    echo -e "${2:-$NC}$1${NC}"
+}
+
+# Function to get line length from .vscode/settings.json
+get_line_length() {
+    if [ -f ".vscode/settings.json" ]; then
+        # Extract dart.lineLength value from settings.json
+        local line_length=$(grep -o '"dart.lineLength": [0-9]*' .vscode/settings.json | grep -o '[0-9]*')
+        if [ -n "$line_length" ]; then
+            echo "$line_length"
+        else
+            echo "80"  # Default if not found
+        fi
+    else
+        echo "80"  # Default if file doesn't exist
+    fi
+}
+
+# Function to check if Python is available
+check_python() {
+    if ! command -v python3 &> /dev/null; then
+        print_colored "❌ Python 3 is required but not installed. Please install Python 3.9+ and try again." "$RED"
+        exit 1
+    fi
+}
+
+# Function to check if Flutter is available
+check_flutter() {
+    if ! command -v flutter &> /dev/null; then
+        print_colored "❌ Flutter is required but not installed. Please install Flutter and try again." "$RED"
+        exit 1
+    fi
+}
+
+# Function to check if translate.py exists
+check_translate_script() {
+    if [ ! -f "translate.py" ]; then
+        print_colored "❌ translate.py script not found in the current directory." "$RED"
+        print_colored "   Please ensure the translation script is present before running this script." "$YELLOW"
+        exit 1
+    fi
+}
+
+# Function to cleanup old backup files
+cleanup_old_backups() {
+    # Remove any existing backup files from various scripts
+    find . -name "*.backup" -delete 2>/dev/null || true
+    print_colored "🧹 Cleaned up old backup files" "$CYAN"
+}
+
+# Function to run translation automation
+run_translation() {
+    print_colored "🚀 Step 2: Running Translation Automation" "$BLUE"
+    print_colored "==========================================" "$BLUE"
+    echo ""
+    
+    # Check prerequisites
+    check_python
+    check_flutter
+    check_translate_script
+    
+    # Run the translation script
+    print_colored "🔄 Executing translation script..." "$CYAN"
+    python3 translate.py
+    
+    print_colored "✅ Translation automation completed!" "$GREEN"
+    echo ""
+}
+
+# Function to format Dart files
+format_dart_files() {
+    print_colored "📝 Step 3: Formatting Dart Files" "$BLUE"
+    print_colored "===============================" "$BLUE"
+    echo ""
+    
+    # Get the line length setting
+    LINE_LENGTH=$(get_line_length)
+    print_colored "📏 Using line length: $LINE_LENGTH characters" "$CYAN"
+    echo ""
+    
+    # Find all .dart files in lib directory and format them
+    dart format --line-length="$LINE_LENGTH" lib/ test/
+    # find ./lib -name "*.dart" -type f | while read -r file; do
+    #     print_colored "📝 Formatting: $file" "$CYAN"
+    #     dart format --line-length="$LINE_LENGTH" "$file"
+    # done
+    
+    print_colored "✅ Dart formatting completed!" "$GREEN"
+    echo ""
+}
+
+# Function to sort pubspec.yaml dependencies
+sort_pubspec_dependencies() {
+    print_colored "📦 Step 1: Organizing pubspec.yaml Dependencies" "$BLUE"
+    print_colored "=============================================" "$BLUE"
+    echo ""
+    
+    if [ ! -f "pubspec.yaml" ]; then
+        print_colored "❌ pubspec.yaml not found in the current directory." "$RED"
+        return 1
+    fi
+    
+    # Cleanup old backup files
+    cleanup_old_backups
+    
+    print_colored "🔄 Sorting dependencies in alphabetical order..." "$CYAN"
+    
+    # Create a backup of the original pubspec.yaml
+    backup_file="pubspec.yaml.$(date +%s).backup"
+    cp pubspec.yaml "$backup_file"
+    print_colored "📋 Created backup: $backup_file" "$YELLOW"
+    
+    # Use a simple approach to sort dependencies alphabetically
+    print_colored "🔄 Sorting dependencies alphabetically..." "$CYAN"
+    
+    # Create a temporary script to sort dependencies with proper multi-line handling
+    python3 -c "
+import re
+
+def parse_dependency_block(lines, start_index):
+    \"\"\"Parse a dependency block starting from start_index, returns (dependency_lines, next_index)\"\"\"
+    deps = []
+    i = start_index
+    
+    while i < len(lines) and (lines[i].strip() == '' or lines[i].startswith('  ')):
+        if lines[i].strip() and not lines[i].strip().startswith('#'):
+            # This is a dependency line
+            dep_lines = [lines[i]]
+            i += 1
+            
+            # Collect all sub-properties (more indented lines)
+            while i < len(lines) and lines[i].startswith('    '):
+                dep_lines.append(lines[i])
+                i += 1
+            
+            deps.append(dep_lines)
+        else:
+            # This is a comment or empty line
+            deps.append([lines[i]])
+            i += 1
+    
+    return deps, i
+
+def get_dependency_name(dep_lines):
+    \"\"\"Extract the dependency name from the first line\"\"\"
+    if not dep_lines:
+        return ''
+    first_line = dep_lines[0].strip()
+    if ':' in first_line:
+        return first_line.split(':')[0].strip().lower()
+    return first_line.lower()
+
+def sort_dependencies():
+    with open('pubspec.yaml', 'r') as f:
+        content = f.read()
+    
+    lines = content.split('\\n')
+    result = []
+    i = 0
+    
+    while i < len(lines):
+        line = lines[i]
+        
+        if line.strip() == 'dependencies:':
+            result.append(line)
+            i += 1
+            
+            # Parse all dependencies as blocks
+            deps, next_i = parse_dependency_block(lines, i)
+            
+            # Sort dependencies by name
+            deps.sort(key=lambda dep: get_dependency_name(dep))
+            
+            # Add sorted dependencies
+            for dep in deps:
+                result.extend(dep)
+            
+            i = next_i
+            continue
+        
+        elif line.strip() == 'dev_dependencies:':
+            result.append(line)
+            i += 1
+            
+            # Parse all dev_dependencies as blocks
+            deps, next_i = parse_dependency_block(lines, i)
+            
+            # Sort dev_dependencies by name
+            deps.sort(key=lambda dep: get_dependency_name(dep))
+            
+            # Add sorted dev_dependencies
+            for dep in deps:
+                result.extend(dep)
+            
+            i = next_i
+            continue
+        
+        else:
+            result.append(line)
+            i += 1
+    
+    # Write back
+    with open('pubspec.yaml', 'w') as f:
+        f.write('\\n'.join(result))
+    
+sort_dependencies()
+"
+    
+    if [ $? -eq 0 ]; then
+        print_colored "✅ Dependencies sorted successfully!" "$GREEN"
+        # Clean up backup file on success
+        rm -f "$backup_file"
+        print_colored "🧹 Cleaned up backup file" "$CYAN"
+    else
+        print_colored "❌ Failed to sort dependencies. Restored from backup." "$RED"
+        cp "$backup_file" pubspec.yaml
+        print_colored "⚠️  Backup file preserved: $backup_file" "$YELLOW"
+    fi
+    
+    if [ $? -eq 0 ]; then
+        print_colored "✅ pubspec.yaml dependencies organized!" "$GREEN"
+    else
+        print_colored "❌ Failed to sort dependencies. Restored from backup." "$RED"
+    fi
+    
+    echo ""
+}
+
+# Main execution
+main() {
+    print_colored "🎯 Auto-format and translate script - for Flutter applications - by MajorE" "$BLUE"
+    print_colored "===============================================" "$BLUE"
+    echo ""
+    
+    # Step 1: Sort pubspec.yaml dependencies
+    sort_pubspec_dependencies
+    
+    # Step 2: Run translation automation
+    run_translation
+    
+    # Step 3: Format Dart files
+    format_dart_files
+    
+    # Final cleanup
+    cleanup_old_backups
+    
+    # Final summary
+    print_colored "🎉 All tasks completed successfully!" "$GREEN"
+    echo ""
+    print_colored "📊 Summary:" "$BLUE"
+    print_colored "  ✅ Translation automation completed" "$GREEN"
+    print_colored "  ✅ Dart files formatted" "$GREEN"
+    print_colored "  ✅ pubspec.yaml dependencies organized" "$GREEN"
+    print_colored "  🧹 Backup files cleaned up" "$GREEN"
+    echo ""
+    print_colored "💡 Next steps:" "$YELLOW"
+    print_colored "  1. Review the generated translations" "$YELLOW"
+    print_colored "  2. Add translations for other languages" "$YELLOW"
+    print_colored "  3. Test the application to ensure everything works correctly" "$YELLOW"
+    print_colored "  4. Commit the changes to version control" "$YELLOW"
+    echo ""
+}
+
+# Run the main function
+main "$@" 

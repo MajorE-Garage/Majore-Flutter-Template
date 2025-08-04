@@ -18,17 +18,20 @@ class LoginView extends StatelessWidget {
           children: [
             AppTextField(
               controller: vm.emailField,
-              label: 'Email',
+              label: context.translations.email,
               keyboardType: TextInputType.emailAddress,
               capitalization: TextCapitalization.none,
             ),
             SizedBox(height: 16),
-            AppTextField(controller: vm.passwordField, label: 'Password'),
+            AppTextField(controller: vm.passwordField, label: context.translations.password),
             SizedBox(height: 16),
             AppViewSelector<LoginVm, bool>(
               selector: (vm) => vm.isBusy,
-              builder: (isBusy, child) =>
-                  AppButton.primary(onPressed: vm.login, busy: isBusy, label: 'Login'),
+              builder: (isBusy, child) => AppButton.primary(
+                onPressed: vm.login,
+                busy: isBusy,
+                label: context.translations.login,
+              ),
             ),
             AppViewSelector<LoginVm, bool>(
               selector: (vm) => vm.hasEncounteredError,

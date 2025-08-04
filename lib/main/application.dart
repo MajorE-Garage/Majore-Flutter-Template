@@ -49,7 +49,9 @@ class _ThisApplicationState extends State<ThisApplication> with CustomWillPopSco
           themeMode: themeManager.themeMode,
           debugShowCheckedModeBanner: !EnvironmentConfig.isProd,
           title: EnvironmentConfig.appName,
-          localizationsDelegates: const [],
+          localizationsDelegates: AppTranslations.localizationsDelegates,
+          supportedLocales: AppTranslations.supportedLocales,
+          locale: const Locale('en', ''),
           routerConfig: AppGoRouter.goRouter,
           builder: (context, widget) {
             if (kReleaseMode) {

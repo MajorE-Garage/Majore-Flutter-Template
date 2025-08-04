@@ -67,13 +67,13 @@ class _AppDatePickerState extends State<AppDatePicker> {
                 AppButton.primary(
                   wrap: true,
                   onPressed: () => AppNavigator.of(context).maybePop(_selectedDate),
-                  label: 'Select',
+                  label: context.translations.select,
                 ),
                 const SizedBox(width: 8),
                 AppButton.secondary(
                   wrap: true,
                   onPressed: () => AppNavigator.of(context).maybePop(null),
-                  label: 'Cancel',
+                  label: context.translations.cancel,
                 ),
               ],
             ),

@@ -1,4 +1,8 @@
+// Localization
+export '../../l10n/generated/app_translations.dart';
+// Presentation
 export '../../utilities/extensions/context_extension.dart';
+// Domain
 export '../domain/app_view_model.dart';
 export '../domain/paginated_data_view_model.dart';
 export 'app_resources.dart';
@@ -27,6 +31,7 @@ export 'ui_components/others/app_switch.dart';
 export 'ui_components/others/app_tab_bar.dart';
 export 'ui_components/others/cached_picture_widget.dart';
 export 'ui_components/others/empty_state_widget.dart';
+export 'ui_components/others/language_selector.dart';
 export 'ui_components/others/paginated_view_render.dart';
 export 'ui_components/others/profile_picture_widget.dart';
 // UI Components - Overlays

@@ -76,7 +76,11 @@ class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends Statel
                 color: AppColors.of(context).grey700,
                 size: 48,
               ),
-              button: AppButton.text(label: 'Retry', onPressed: vm.refresh, view: E),
+              button: AppButton.text(
+                label: context.translations.retry,
+                onPressed: vm.refresh,
+                view: E,
+              ),
             );
     } else {
       child = emptyState != null
@@ -89,7 +93,11 @@ class PaginatedViewRender<E extends PaginatedDataViewModel<T>, T> extends Statel
                 // size: 48,
               ),
               illustrationSize: 48,
-              button: AppButton.text(label: 'Refresh', onPressed: vm.refresh, view: E),
+              button: AppButton.text(
+                label: context.translations.refresh,
+                onPressed: vm.refresh,
+                view: E,
+              ),
             );
     }
     return Column(

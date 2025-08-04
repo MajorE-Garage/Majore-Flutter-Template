@@ -60,6 +60,8 @@ class AppDateField extends StatelessWidget {
       isRequired: isRequired,
       validator: _makeValidator(),
       suffix: AppIconButton(
+        label: '$label DateField',
+        view: context.immediateAncestor,
         circled: false,
         child: Icon(Icons.calendar_today_rounded, color: AppColors.of(context).textColor, size: 16),
       ),

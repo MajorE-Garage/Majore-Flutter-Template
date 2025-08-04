@@ -59,6 +59,8 @@ class AppSearchField extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AppIconButton.fromIconData(
+                    label: 'Clear SearchField',
+                    view: context.immediateAncestor,
                     circled: false,
                     iconSize: 16,
                     icon: Icons.close_rounded,

@@ -108,10 +108,10 @@ class AppButton extends StatelessWidget {
               FocusScope.of(context).unfocus();
               onPressed();
               AnalyticsService.instance.logEvent(
-                'Button Press',
+                'Button Pressed',
                 properties: {
                   'Name': label,
-                  if (view != null) 'Location': view.toString(),
+                  'Location': view?.toString() ?? context.immediateAncestor,
                   'Type': _type.name,
                 },
               );

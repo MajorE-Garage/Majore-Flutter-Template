@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../services/analytics_service/analytics_service.dart';
 import '../../presentation.dart';
 
@@ -6,34 +7,34 @@ class AppIconButton extends StatelessWidget {
   const AppIconButton({
     super.key,
     required Widget child,
+    required this.label, // Add label parameter
     this.onPressed,
     this.size = 24,
     this.color,
     this.circled = true,
-    required  this.label, // Add label parameter
     this.view, // Add view parameter
-  })  : _child = child,
-        _icon = null,
-        iconColor = null,
-        iconSize = 0;
+  }) : _child = child,
+       _icon = null,
+       iconColor = null,
+       iconSize = 0;
 
   const AppIconButton.fromIconData({
     super.key,
     required IconData icon,
+    required this.label, // Add label parameter
     this.onPressed,
     this.size = 24,
     this.iconSize = 20,
     this.iconColor,
     this.color,
     this.circled = true,
-    required this.label, // Add label parameter
-     this.view, // Add view parameter
-  })  : _child = null,
-        _icon = icon,
-        assert(
-          (circled && size >= iconSize) || !circled,
-          'size cannot be less than icon size for circled AppIconButton',
-        );
+    this.view, // Add view parameter
+  }) : _child = null,
+       _icon = icon,
+       assert(
+         (circled && size >= iconSize) || !circled,
+         'size cannot be less than icon size for circled AppIconButton',
+       );
 
   final Widget? _child;
   final IconData? _icon;
@@ -42,7 +43,7 @@ class AppIconButton extends StatelessWidget {
   final Color? color;
   final double iconSize;
   final Color? iconColor;
-  
+
   final bool circled;
   final String label; // For analytics
   final Object? view; // For screen/location tracking
@@ -55,16 +56,17 @@ class AppIconButton extends StatelessWidget {
             ? () {
                 onPressed?.call();
                 AnalyticsService.instance.logEvent(
-                  'Icon Button Press',
+                  'IconButton Pressed',
                   properties: {
-                    'Name': label, // Use label instead of analyticsName
-                    if (view != null) 'Location': view.toString(), // Add location tracking
-                    'Type': 'Plain', 
+                    'Name': label,
+                    'Location': view?.toString() ?? context.immediateAncestor,
+                    'Type': 'Plain',
                   },
                 );
               }
             : null,
-        child: _child ??
+        child:
+            _child ??
             Icon(_icon, color: iconColor ?? AppColors.of(context).primaryColor, size: iconSize),
       );
     }
@@ -74,13 +76,14 @@ class AppIconButton extends StatelessWidget {
     return InkResponse(
       onTap: onPressed != null
           ? () {
+              print(context.immediateAncestor);
               onPressed?.call();
               AnalyticsService.instance.logEvent(
-                'Icon Button Press',
+                'Icon Button Pressed',
                 properties: {
-                  'Name': label, // Use label instead of analyticsName
-                  if (view != null) 'Location': view.toString(), // Add location tracking
-                  'Type': 'Circled' 
+                  'Name': label,
+                  'Location': view?.toString() ?? context.immediateAncestor,
+                  'Type': 'Circled',
                 },
               );
             }
@@ -90,7 +93,8 @@ class AppIconButton extends StatelessWidget {
         width: size,
         decoration: BoxDecoration(shape: BoxShape.circle, color: color),
         alignment: Alignment.center,
-        child: _child ??
+        child:
+            _child ??
             Icon(_icon, color: iconColor ?? AppColors.of(context).grey800, size: iconSize),
       ),
     );

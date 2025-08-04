@@ -21,7 +21,7 @@
                         "projectId": "majore-template",
                         "appId": "1:287754819182:ios:3f5d5c2692947df271787f",
                         "uploadDebugSymbols": true,
-                        "fileOutput": "ios/flavors/prod/GoogleService-Info.plist"
+                        "fileOutput": "ios/flavors/staging/GoogleService-Info.plist"
                     }
                 }
             },

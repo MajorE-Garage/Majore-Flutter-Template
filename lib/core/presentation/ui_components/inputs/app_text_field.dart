@@ -196,8 +196,8 @@ class _AppTextFieldState extends State<AppTextField> {
                               icon: _visible ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
                               onPressed: _toggleVisibility,
                               circled: false,
-                              label: 'Toggle Visibility',
-                              view: 'Text Field',
+                              label: '${widget.label} Visibility Toggle',
+                              view: context.immediateAncestor,
                             ),
                           )
                         else

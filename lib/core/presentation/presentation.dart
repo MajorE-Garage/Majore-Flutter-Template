@@ -8,7 +8,6 @@ export '../domain/paginated_data_view_model.dart';
 export 'app_resources.dart';
 export 'app_view.dart';
 export 'navigation/app_navigator.dart';
-export 'navigation/nav2.0/app_router.dart';
 export 'theming/app_theme_manager.dart';
 // UI Components - Buttons
 export 'ui_components/buttons/app_back_button.dart';

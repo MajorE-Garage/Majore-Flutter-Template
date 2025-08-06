@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Dart Format and Translation Automation Script
-# This script automates translation, formats Dart code, and organizes dependencies
+# Dart Format and Dependencies Organization Script
+# This script formats Dart code and organizes dependencies
 
 set -e  # Exit on any error
 
@@ -33,27 +33,10 @@ get_line_length() {
     fi
 }
 
-# Function to check if Python is available
-check_python() {
-    if ! command -v python3 &> /dev/null; then
-        print_colored "❌ Python 3 is required but not installed. Please install Python 3.9+ and try again." "$RED"
-        exit 1
-    fi
-}
-
 # Function to check if Flutter is available
 check_flutter() {
     if ! command -v flutter &> /dev/null; then
         print_colored "❌ Flutter is required but not installed. Please install Flutter and try again." "$RED"
-        exit 1
-    fi
-}
-
-# Function to check if translate.py exists
-check_translate_script() {
-    if [ ! -f "translate.py" ]; then
-        print_colored "❌ translate.py script not found in the current directory." "$RED"
-        print_colored "   Please ensure the translation script is present before running this script." "$YELLOW"
         exit 1
     fi
 }
@@ -65,28 +48,11 @@ cleanup_old_backups() {
     print_colored "🧹 Cleaned up old backup files" "$CYAN"
 }
 
-# Function to run translation automation
-run_translation() {
-    print_colored "🚀 Step 2: Running Translation Automation" "$BLUE"
-    print_colored "==========================================" "$BLUE"
-    echo ""
-    
-    # Check prerequisites
-    check_python
-    check_flutter
-    check_translate_script
-    
-    # Run the translation script
-    print_colored "🔄 Executing translation script..." "$CYAN"
-    python3 translate.py
-    
-    print_colored "✅ Translation automation completed!" "$GREEN"
-    echo ""
-}
+
 
 # Function to format Dart files
 format_dart_files() {
-    print_colored "📝 Step 3: Formatting Dart Files" "$BLUE"
+    print_colored "📝 Step 2: Formatting Dart Files" "$BLUE"
     print_colored "===============================" "$BLUE"
     echo ""
     
@@ -245,17 +211,14 @@ sort_dependencies()
 
 # Main execution
 main() {
-    print_colored "🎯 Auto-format and translate script - for Flutter applications - by MajorE" "$BLUE"
+    print_colored "🎯 Auto-format script - for Flutter applications - by MajorE" "$BLUE"
     print_colored "===============================================" "$BLUE"
     echo ""
     
     # Step 1: Sort pubspec.yaml dependencies
     sort_pubspec_dependencies
     
-    # Step 2: Run translation automation
-    run_translation
-    
-    # Step 3: Format Dart files
+    # Step 2: Format Dart files
     format_dart_files
     
     # Final cleanup
@@ -265,16 +228,13 @@ main() {
     print_colored "🎉 All tasks completed successfully!" "$GREEN"
     echo ""
     print_colored "📊 Summary:" "$BLUE"
-    print_colored "  ✅ Translation automation completed" "$GREEN"
     print_colored "  ✅ Dart files formatted" "$GREEN"
     print_colored "  ✅ pubspec.yaml dependencies organized" "$GREEN"
     print_colored "  🧹 Backup files cleaned up" "$GREEN"
     echo ""
     print_colored "💡 Next steps:" "$YELLOW"
-    print_colored "  1. Review the generated translations" "$YELLOW"
-    print_colored "  2. Add translations for other languages" "$YELLOW"
-    print_colored "  3. Test the application to ensure everything works correctly" "$YELLOW"
-    print_colored "  4. Commit the changes to version control" "$YELLOW"
+    print_colored "  1. Test the application to ensure everything works correctly" "$YELLOW"
+    print_colored "  2. Commit the changes to version control" "$YELLOW"
     echo ""
 }
 

@@ -1,8 +1,5 @@
 name: majore_mvvm_template
 description: "A new Flutter project."
-launcher_name: Shun App
-bundle_id_android: com.shun.app
-bundle_id_ios: com.shun.app
   
 publish_to: 'none'
 # The following defines the version and build number for your application using this format:version: 1.0.0-test+1

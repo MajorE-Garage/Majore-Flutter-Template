@@ -63,7 +63,6 @@ jobs:
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
           
-          # Set environment-specific secrets
           if [ "$ENV_NAME" == "prod" ]; then
             echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
@@ -71,6 +70,7 @@ jobs:
             echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
@@ -78,6 +78,7 @@ jobs:
             echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -87,51 +88,41 @@ jobs:
         run: |
           echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
           
-          # Check if Firebase secrets are set
           if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
             echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Note: GOOGLE_SERVICES_JSON is already validated above
-          
-          # Check if environment variables are set
           if [ -z "${{ env.DART_DEFINES }}" ]; then
             echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Validate JSON format
           if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
             echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if keystore is set
           if [ -z "${{ env.KEYSTORE_BASE64 }}" ]; then
             echo "❌ KEYSTORE_BASE64 is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if key properties are set
           if [ -z "${{ env.KEY_PROPERTIES }}" ]; then
             echo "❌ KEY_PROPERTIES is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if google-services.json is set
           if [ -z "${{ env.GOOGLE_SERVICES_JSON }}" ]; then
             echo "❌ GOOGLE_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if android package name is set
           if [ -z "${{ env.ANDROID_PACKAGE_NAME }}" ]; then
             echo "❌ ANDROID_PACKAGE_NAME is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if Firebase App ID is set (for future use)
           if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
             echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
             exit 1
@@ -195,7 +186,6 @@ jobs:
       - name: Create Dart Defines environment file
         id: env_file
         run: |
-          # Write environment JSON to file
           echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
           echo "📝 Created ${env.ENV_NAME}.env with environment variables"
 
@@ -240,20 +230,17 @@ jobs:
       - name: Read current version from pubspec.yaml
         id: version
         run: |
-          # Check if pubspec.yaml exists
           if [ ! -f "pubspec.yaml" ]; then
             echo "❌ pubspec.yaml not found"
             exit 1
           fi
           
-          # Extract version from pubspec.yaml with error handling
           VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
           if [ -z "$VERSION_LINE" ]; then
             echo "❌ No version line found in pubspec.yaml"
             exit 1
           fi
           
-          # Extract version value and clean it
           CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
           if [ -z "$CURRENT_VERSION" ]; then
             echo "❌ Empty version value in pubspec.yaml"
@@ -262,43 +249,32 @@ jobs:
           
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
           
-          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
           if [[ $CURRENT_VERSION == *"+"* ]]; then
-            # Split on '+' to separate version and build number
             VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
             BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
             
-            # Validate version part (should be semantic version)
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
             fi
             
-            # Validate build number (should be numeric)
             if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "❌ Invalid build number: $BUILD_NUMBER"
               exit 1
             fi
           else
-            # No build number specified, use default
             VERSION_PART=$CURRENT_VERSION
             BUILD_NUMBER="1"
             
-            # Validate version part
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
             fi
           fi
-          
-          # Increment build number
-          BUILD_NUMBER=$((BUILD_NUMBER + 1))
-          
-          # echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
+          BUILD_NUMBER=$((BUILD_NUMBER + 1)) 
+         
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          # echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
-          # echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
-
+         
       - name: Build Android AAB
         run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
 
@@ -306,7 +282,7 @@ jobs:
       - name: Upload AAB to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
-          serviceAccountJsonPlainText: ${{ env.GOOGLE_SERVICES_JSON }}
+          serviceAccountJsonPlainText: ${{ env.CLOUD_ACCOUNT_JSON }}
           packageName: ${{ env.ANDROID_PACKAGE_NAME }}
           releaseFiles: ${{ github.workspace }}/build/app/outputs/bundle/${env.ENV_NAME}Release/app-${env.ENV_NAME}-release.aab
           track: production
@@ -319,10 +295,8 @@ jobs:
         run: |
           echo "🧹 Cleaning up build artifacts..."
           
-          # Clean Flutter build artifacts (preserves pub cache)
           flutter clean
           
-          # Clean Android build outputs (preserves Gradle cache)
           cd android
           ./gradlew clean
           cd ..
@@ -340,7 +314,6 @@ jobs:
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
           
-          # Set environment-specific secrets
           if [ "$ENV_NAME" == "prod" ]; then
             echo "APP_STORE_CONNECT_ISSUER_ID=${{ secrets.PROD_APP_STORE_CONNECT_ISSUER_ID }}" >> $GITHUB_ENV
             echo "APP_STORE_CONNECT_KEY_IDENTIFIER=${{ secrets.PROD_APP_STORE_CONNECT_KEY_IDENTIFIER }}" >> $GITHUB_ENV
@@ -365,7 +338,6 @@ jobs:
         run: |
           echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
           
-          # Check if iOS secrets are set
           if [ -z "${{ env.APP_STORE_CONNECT_ISSUER_ID }}" ]; then
             echo "❌ APP_STORE_CONNECT_ISSUER_ID is not set for ${{ env.ENV_NAME }}"
             exit 1
@@ -401,7 +373,6 @@ jobs:
             exit 1
           fi
           
-          # Validate JSON format
           if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
             echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
             exit 1
@@ -459,27 +430,23 @@ jobs:
       - name: Create Dart Defines environment file
         id: env_file
         run: |
-          # Write environment JSON to file
           echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
           echo "📝 Created ${env.ENV_NAME}.env with environment variables"
       
       - name: Read current version from pubspec.yaml
         id: version
         run: |
-          # Check if pubspec.yaml exists
           if [ ! -f "pubspec.yaml" ]; then
             echo "❌ pubspec.yaml not found"
             exit 1
           fi
           
-          # Extract version from pubspec.yaml with error handling
           VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
           if [ -z "$VERSION_LINE" ]; then
             echo "❌ No version line found in pubspec.yaml"
             exit 1
           fi
           
-          # Extract version value and clean it
           CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
           if [ -z "$CURRENT_VERSION" ]; then
             echo "❌ Empty version value in pubspec.yaml"
@@ -488,42 +455,32 @@ jobs:
           
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
           
-          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
           if [[ $CURRENT_VERSION == *"+"* ]]; then
-            # Split on '+' to separate version and build number
             VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
             BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
             
-            # Validate version part (should be semantic version)
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
             fi
             
-            # Validate build number (should be numeric)
             if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "❌ Invalid build number: $BUILD_NUMBER"
               exit 1
             fi
           else
-            # No build number specified, use default
             VERSION_PART=$CURRENT_VERSION
             BUILD_NUMBER="1"
             
-            # Validate version part
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
             fi
           fi
           
-          # Increment build number
           BUILD_NUMBER=$((BUILD_NUMBER + 1))
           
-          # echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          # echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
-          # echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
       - name: Build iOS IPA
         run: flutter build ipa --release -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
@@ -531,12 +488,10 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          # Get PR information
           PR_NUMBER=${{ github.event.pull_request.number }}
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           
-          # Generate release notes in the specified template
           RELEASE_NOTES="Production IPA for ${PR_TITLE}.
           #${PR_NUMBER} by ${PR_AUTHOR}"
           
@@ -564,7 +519,6 @@ jobs:
         run: |
           echo "🧹 Cleaning up build artifacts..."
           
-          # Clean Flutter build artifacts (preserves pub cache)
           flutter clean
           
           echo "✅ Build artifacts cleanup completed"

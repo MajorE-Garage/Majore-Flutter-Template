@@ -98,12 +98,12 @@ jobs:
             echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> "$GITHUB_ENV"
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> "$GITHUB_ENV"
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> "$GITHUB_ENV"
-            echo "CLOUD_SERVICES_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> "$GITHUB_ENV"
+            echo "CLOUD_SERVICES_JSON_BASE64=$(echo '${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}' | base64 -w 0)" >> "$GITHUB_ENV"
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> "$GITHUB_ENV"
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> "$GITHUB_ENV"
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> "$GITHUB_ENV"
-            echo "CLOUD_SERVICES_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> "$GITHUB_ENV"
+            echo "CLOUD_SERVICES_JSON_BASE64=$(echo '${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}' | base64 -w 0)" >> "$GITHUB_ENV"
           fi
 
       # 3. Validate non-JSON variables
@@ -126,7 +126,7 @@ jobs:
             exit 1
           fi
           
-          if [ -z "${{ env.CLOUD_SERVICES_JSON }}" ]; then
+          if [ -z "${{ env.CLOUD_SERVICES_JSON_BASE64 }}" ]; then
             echo "❌ CLOUD_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
@@ -347,7 +347,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ env.CLOUD_SERVICES_JSON }}
+          serviceCredentialsFileContent: ${{ env.CLOUD_SERVICES_JSON_BASE64 | base64_decode }}
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: testers

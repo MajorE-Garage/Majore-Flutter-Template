@@ -289,17 +289,17 @@ jobs:
             exit 1
           fi
           
-        # Get PR number for pre-release label
+                    # Get PR number for pre-release label
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR_NUMBER="PR${{ github.event.pull_request.number }}"
           elif [ "${{ github.event_name }}" == "issue_comment" ]; then
             PR_NUMBER="PR${{ github.event.issue.number }}"
           else
-        # For workflow_dispatch, use a default or extract from branch
+            # For workflow_dispatch, use feature name
             PR_NUMBER="${{ github.event.inputs.feature_name }}"
           fi
           
-        # Create pre-release version with PR number
+                    # Create pre-release version with PR number
           BUILD_NAME="${VERSION_PART}-${PR_NUMBER}"
           
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"

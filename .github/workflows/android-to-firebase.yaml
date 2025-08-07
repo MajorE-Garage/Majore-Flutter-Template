@@ -325,7 +325,12 @@ jobs:
   
       # Build APK
       - name: Build Android APK
-        run: flutter build apk --release --flavor ${env.ENV_NAME} --build-name=${{ env.BUILD_NAME }} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
+        env:
+          ENV_NAME: ${{ env.ENV_NAME }}
+          BUILD_NAME: ${{ env.BUILD_NAME }}
+          BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
+          ENV_FILE: ${{ env.ENV_NAME }}.env
+        run: flutter build apk --release --flavor $ENV_NAME --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER -t lib/main/main.dart --dart-define-from-file=$ENV_FILE
 
       # Generate release notes
       - name: Generate release notes

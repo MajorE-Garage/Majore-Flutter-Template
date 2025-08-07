@@ -71,6 +71,7 @@ jobs:
             echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
@@ -78,6 +79,7 @@ jobs:
             echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -306,7 +308,7 @@ jobs:
       - name: Upload AAB to Google Play
         uses: r0adkll/upload-google-play@v1
         with:
-          serviceAccountJsonPlainText: ${{ env.GOOGLE_SERVICES_JSON }}
+          serviceAccountJsonPlainText: ${{ env.CLOUD_ACCOUNT_JSON }}
           packageName: ${{ env.ANDROID_PACKAGE_NAME }}
           releaseFiles: ${{ github.workspace }}/build/app/outputs/bundle/${env.ENV_NAME}Release/app-${env.ENV_NAME}-release.aab
           track: production

@@ -1,4 +1,4 @@
-name: Send APK to Firebase App Distribution
+name: Send APK to Firebase
 
 # Required Secrets (prefixed by environment):
 # - STAGING_FIREBASE_APP_ID: Firebase App Distribution app ID for staging
@@ -13,8 +13,8 @@ name: Send APK to Firebase App Distribution
 # - STAGING_KEYSTORE_BASE64: Base64 encoded keystore file for staging APK signing
 # - PROD_KEYSTORE_BASE64: Base64 encoded keystore file for production APK signing
 
-# - STAGING_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for staging flavor
-# - PROD_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for production flavor
+# - STAGING_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for staging flavor
+# - PROD_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for production flavor
 
 # - STAGING_KEY_PROPERTIES: Complete key.properties file content for staging signing
 # - PROD_KEY_PROPERTIES: Complete key.properties file content for production signing
@@ -78,12 +78,14 @@ jobs:
             echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
             echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -346,7 +348,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ env.GOOGLE_SERVICES_JSON }}
+          serviceCredentialsFileContent: ${{ env.CLOUD_ACCOUNT_JSON }}
           groups: dev-testers
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}

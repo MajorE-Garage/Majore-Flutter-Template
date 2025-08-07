@@ -40,7 +40,7 @@ env:
 jobs:
   build-and-send:
     if: |
-      # Trigger on PR ready for review (defaults to staging)
+      (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'pull_request' && github.event.action == 'ready_for_review') ||
       # Trigger on comment containing 'Build for testing: staging' or 'Build for testing: prod'
       (github.event_name == 'issue_comment' && 

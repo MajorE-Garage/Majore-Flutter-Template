@@ -1,4 +1,4 @@
-name: Send APK to Firebase App Distribution
+name: Send APK to Firebase
 
 # Required Secrets (prefixed by environment):
 # - STAGING_FIREBASE_APP_ID: Firebase App Distribution app ID for staging
@@ -13,8 +13,8 @@ name: Send APK to Firebase App Distribution
 # - STAGING_KEYSTORE_BASE64: Base64 encoded keystore file for staging APK signing
 # - PROD_KEYSTORE_BASE64: Base64 encoded keystore file for production APK signing
 
-# - STAGING_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for staging flavor
-# - PROD_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for production flavor
+# - STAGING_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for staging flavor
+# - PROD_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for production flavor
 
 # - STAGING_KEY_PROPERTIES: Complete key.properties file content for staging signing
 # - PROD_KEY_PROPERTIES: Complete key.properties file content for production signing
@@ -24,10 +24,23 @@ name: Send APK to Firebase App Distribution
 # - prod: Uses production environment with no suffix
 
 on:
-  pull_request:
-    types: [ready_for_review]
   issue_comment:
     types: [created, edited]
+  pull_request:
+    types: [ready_for_review]
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: 'Select the environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      feature_name:
+        description: 'Select the feature'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -42,7 +55,6 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'pull_request' && github.event.action == 'ready_for_review') ||
-      # Trigger on comment containing 'Build for testing: staging' or 'Build for testing: prod'
       (github.event_name == 'issue_comment' && 
        github.event.issue.pull_request != null &&
        (contains(github.event.comment.body, 'Build for testing: staging') ||
@@ -52,18 +64,18 @@ jobs:
       - name: Determine environment and set secrets
         id: env_detection
         run: |
-          # Default to staging for PR ready for review
+        
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             ENV_NAME="staging"
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV_NAME="${{ github.event.inputs.env_name }}"
           else
-            # Check comment for environment specification
             COMMENT="${{ github.event.comment.body }}"
             if [[ "$COMMENT" == *"Build for testing: prod"* ]]; then
               ENV_NAME="prod"
             elif [[ "$COMMENT" == *"Build for testing: staging"* ]]; then
               ENV_NAME="staging"
             else
-              # Default to staging for any other comment
               ENV_NAME="staging"
             fi
           fi
@@ -71,19 +83,20 @@ jobs:
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
           
-          # Set environment-specific secrets
           if [ "$ENV_NAME" == "prod" ]; then
             echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
             echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
             echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
             echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -93,39 +106,31 @@ jobs:
         run: |
           echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
           
-          # Check if Firebase secrets are set
           if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
             echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Note: GOOGLE_SERVICES_JSON is already validated above
-          
-          # Check if environment variables are set
           if [ -z "${{ env.DART_DEFINES }}" ]; then
             echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Validate JSON format
           if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
             echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if keystore is set
           if [ -z "${{ env.KEYSTORE_BASE64 }}" ]; then
             echo "❌ KEYSTORE_BASE64 is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if key properties are set
           if [ -z "${{ env.KEY_PROPERTIES }}" ]; then
             echo "❌ KEY_PROPERTIES is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          # Check if google-services.json is set
           if [ -z "${{ env.GOOGLE_SERVICES_JSON }}" ]; then
             echo "❌ GOOGLE_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
             exit 1
@@ -188,7 +193,6 @@ jobs:
       - name: Create Dart Defines environment file
         id: env_file
         run: |
-          # Write environment JSON to file
           echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
           echo "📝 Created ${env.ENV_NAME}.env with environment variables"
 
@@ -233,20 +237,17 @@ jobs:
       - name: Read current version from pubspec.yaml
         id: version
         run: |
-          # Check if pubspec.yaml exists
           if [ ! -f "pubspec.yaml" ]; then
             echo "❌ pubspec.yaml not found"
             exit 1
           fi
           
-          # Extract version from pubspec.yaml with error handling
           VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
           if [ -z "$VERSION_LINE" ]; then
             echo "❌ No version line found in pubspec.yaml"
             exit 1
           fi
           
-          # Extract version value and clean it
           CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
           if [ -z "$CURRENT_VERSION" ]; then
             echo "❌ Empty version value in pubspec.yaml"
@@ -255,29 +256,23 @@ jobs:
           
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
           
-          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
           if [[ $CURRENT_VERSION == *"+"* ]]; then
-            # Split on '+' to separate version and build number
             VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
             BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
             
-            # Validate version part (should be semantic version)
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
             fi
             
-            # Validate build number (should be numeric)
             if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
               echo "❌ Invalid build number: $BUILD_NUMBER"
               exit 1
             fi
           else
-            # No build number specified, use default
             VERSION_PART=$CURRENT_VERSION
             BUILD_NUMBER="1"
             
-            # Validate version part
             if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
               echo "❌ Invalid version format: $VERSION_PART"
               exit 1
@@ -292,9 +287,10 @@ jobs:
       - name: Calculate build metadata
         id: build_meta
         run: |
-          # Get PR number based on event type
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR=${{ github.event.pull_request.number }}
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            PR="${{ github.event.inputs.feature_name }}"
           else
             PR=${{ github.event.issue.number }}
           fi
@@ -316,7 +312,6 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          # Get PR information based on event type
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR_NUMBER=${{ github.event.pull_request.number }}
             PR_TITLE="${{ github.event.pull_request.title }}"
@@ -327,10 +322,8 @@ jobs:
             PR_AUTHOR="${{ github.event.issue.user.login }}"
           fi
           
-          # Get environment name and capitalize it
           ENV_NAME_UPPER=$(echo "${{ env.ENV_NAME }}" | tr '[:lower:]' '[:upper:]')
           
-          # Generate release notes in the specified template
           RELEASE_NOTES="${ENV_NAME_UPPER} APK for ${PR_TITLE}.
           #${PR_NUMBER} by ${PR_AUTHOR}"
           
@@ -346,7 +339,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ env.GOOGLE_SERVICES_JSON }}
+          serviceCredentialsFileContent: ${{ env.CLOUD_ACCOUNT_JSON }}
           groups: dev-testers
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
@@ -355,7 +348,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Get PR number based on event type
             const pr = context.eventName === 'pull_request' 
               ? context.payload.pull_request.number 
               : context.payload.issue.number;
@@ -375,10 +367,8 @@ jobs:
         run: |
           echo "🧹 Cleaning up build artifacts..."
           
-          # Clean Flutter build artifacts (preserves pub cache)
           flutter clean
           
-          # Clean Android build outputs (preserves Gradle cache)
           cd android
           ./gradlew clean
           cd ..

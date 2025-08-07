@@ -12,7 +12,7 @@ class AuthenticationRepo extends AppRepository {
       runDataWithGuard(() async {
         final req = JsonRequest.post('/login', {'email': email, 'password': password});
         final response = await _networkService.sendJsonRequest(req);
-        final user = UserModel(id: response['id'], email: response['email']);
+        final user = UserModel(id: response['id'], email: response['ema']);
         return DataResponse(data: (token: response['token'], user: user));
       });
 }

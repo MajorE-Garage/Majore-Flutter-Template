@@ -103,6 +103,9 @@ jobs:
               echo "KEY_PROPERTIES<<EOF"
               echo "${{ secrets.PROD_KEY_PROPERTIES }}"
               echo "EOF"
+              echo "CLOUD_SERVICES_JSON<<EOF"
+              echo "${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}"
+              echo "EOF"
             } >> "$GITHUB_ENV"
           else
             {
@@ -112,6 +115,9 @@ jobs:
               echo "EOF"
               echo "KEY_PROPERTIES<<EOF"
               echo "${{ secrets.STAGING_KEY_PROPERTIES }}"
+              echo "EOF"
+              echo "CLOUD_SERVICES_JSON<<EOF"
+              echo "${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}"
               echo "EOF"
             } >> "$GITHUB_ENV"
           fi
@@ -169,18 +175,7 @@ jobs:
           fi
           echo "✅ Created google-services.json for ${{ env.ENV_NAME }}"
 
-      - name: Create Firebase service account JSON
-        run: |
-          if [ "${{ env.ENV_NAME }}" == "prod" ]; then
-            echo '${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}' > firebase-service-account.json
-          else
-            echo '${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}' > firebase-service-account.json
-          fi
-          if [ ! -f "firebase-service-account.json" ]; then
-            echo "❌ Failed to create Firebase service account JSON"
-            exit 1
-          fi
-          echo "✅ Created Firebase service account JSON"
+
 
       - name: Create Dart defines environment file
         id: env_file
@@ -367,7 +362,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFile: firebase-service-account.json
+          serviceCredentialsFileContent: ${{ env.CLOUD_SERVICES_JSON }}
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: testers

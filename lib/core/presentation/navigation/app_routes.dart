@@ -1,62 +1,24 @@
-import 'dart:io';
+class AppRoute {
+  final String name;
+  final String path;
+  final Map<String, String> queryParameters;
+  final Map<String, String> pathParameters;
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-
-// TODO(Toyyib): Port to Navigation 2.0
-
-class _ShadowRoute<T> extends PageRoute<T> {
-  @override
-  RouteSettings get settings => const RouteSettings(name: 'ShadowRoute');
-
-  @override
-  Color? get barrierColor => Colors.transparent;
-
-  @override
-  String? get barrierLabel => null;
+  const AppRoute({
+    required this.name,
+    required this.path,
+    this.queryParameters = const {},
+    this.pathParameters = const {},
+  });
 
   @override
-  Widget buildPage(
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-  ) {
-    return const SizedBox.shrink();
-  }
-
-  @override
-  bool get maintainState => false;
-
-  @override
-  bool get opaque => false;
-
-  @override
-  Duration get transitionDuration => Duration.zero;
+  String toString() => name;
 }
 
 abstract class AppRoutes {
-  static const dashboardRoute = 'Dashboard';
-  static const loginRoute = 'LoginView';
-  static const splashRoute = 'Splash';
-
-  static Route<T> generateRoutes<T>(RouteSettings settings) {
-    switch (settings.name) {
-      default:
-        return _ShadowRoute();
-    }
-  }
-
-  static final routes = <String, WidgetBuilder>{
-    //
-  };
-
-  static Route<T> getPageRoute<T>({required RouteSettings settings, required Widget view}) {
-    if (settings.name == null) {
-      settings = RouteSettings(name: view.runtimeType.toString(), arguments: settings.arguments);
-    }
-
-    return Platform.isIOS
-        ? CupertinoPageRoute<T>(settings: settings, builder: (_) => view)
-        : MaterialPageRoute<T>(settings: settings, builder: (_) => view);
-  }
+  static const splash = AppRoute(name: 'splash', path: '/splash');
+  static const login = AppRoute(name: 'login', path: '/login');
+  static const dashboard = AppRoute(name: 'dashboard', path: '/');
+  static AppRoute profile(String id) =>
+      AppRoute(name: 'profile', path: '/:id/profile', pathParameters: {'id': id});
 }

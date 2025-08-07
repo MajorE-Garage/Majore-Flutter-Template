@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../core/presentation/navigation/app_router.dart';
 import '../core/presentation/presentation.dart';
 import '../services/app_lifecycle_service/app_lifecycle_service.dart';
 import '../services/remote_config/remote_config_service.dart';
@@ -43,7 +44,7 @@ class _ThisApplicationState extends State<ThisApplication> with CustomWillPopSco
       builder: (themeManager, _) => PopScope(
         canPop: false,
         onPopInvokedWithResult: onSecondBackPop,
-        child: MaterialApp(
+        child: MaterialApp.router(
           theme: themeManager.lightTheme,
           darkTheme: themeManager.darkTheme,
           themeMode: themeManager.themeMode,
@@ -52,11 +53,7 @@ class _ThisApplicationState extends State<ThisApplication> with CustomWillPopSco
           localizationsDelegates: AppTranslations.localizationsDelegates,
           supportedLocales: AppTranslations.supportedLocales,
           locale: const Locale('en', ''),
-          initialRoute: AppRoutes.splashRoute,
-          routes: AppRoutes.routes,
-          onGenerateRoute: AppRoutes.generateRoutes,
-          navigatorKey: AppNavigator.mainKey,
-          navigatorObservers: [AppNavigatorObserver.instance],
+          routerConfig: AppRouter.router,
           builder: (context, widget) {
             if (kReleaseMode) {
               const errT = Text('A rendering error occured');

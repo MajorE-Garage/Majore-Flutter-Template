@@ -181,9 +181,9 @@ jobs:
         id: env_file
         run: |
           if [ "${{ env.ENV_NAME }}" == "prod" ]; then
-            echo '${{ secrets.PROD_ENV }}' > ${env.ENV_NAME}.env
+            echo "${{ secrets.PROD_ENV }}" > "${{ env.ENV_NAME }}.env"
           else
-            echo '${{ secrets.STAGING_ENV }}' > ${env.ENV_NAME}.env
+            echo "${{ secrets.STAGING_ENV }}" > "${{ env.ENV_NAME }}.env"
           fi
           if [ ! -f "${{env.ENV_NAME}}.env" ]; then
             echo "❌ Failed to create ${{env.ENV_NAME}}.env for ${{ env.ENV_NAME }}"

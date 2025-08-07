@@ -1,4 +1,4 @@
-package com.majore.majore_mvvm_template
+package com.majore.template
 
 import io.flutter.embedding.android.FlutterActivity
 

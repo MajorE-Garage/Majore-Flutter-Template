@@ -1,7 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <application
-        android:label="majore_mvvm_template"
         tools:replace="android:label"
         android:icon="@mipmap/ic_launcher">
         <activity

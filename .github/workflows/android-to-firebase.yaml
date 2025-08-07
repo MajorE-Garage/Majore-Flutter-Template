@@ -80,23 +80,23 @@ jobs:
             fi
           fi
           
-          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
-          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "ENV_NAME=$ENV_NAME" >> "$GITHUB_ENV"
+          echo "ENV_NAME=$ENV_NAME" >> "$GITHUB_OUTPUT"
           
           if [ "$ENV_NAME" == "prod" ]; then
-            echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
-            echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
-            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
-            echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
-            echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
-            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
+            echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> "$GITHUB_ENV"
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> "$GITHUB_ENV"
+            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> "$GITHUB_ENV"
+            echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> "$GITHUB_ENV"
+            echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> "$GITHUB_ENV"
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> "$GITHUB_ENV"
           else
-            echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
-            echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
-            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
-            echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
-            echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
-            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
+            echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> "$GITHUB_ENV"
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> "$GITHUB_ENV"
+            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> "$GITHUB_ENV"
+            echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> "$GITHUB_ENV"
+            echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> "$GITHUB_ENV"
+            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> "$GITHUB_ENV"
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -254,7 +254,7 @@ jobs:
             exit 1
           fi
           
-          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> "$GITHUB_ENV"
           
           if [[ $CURRENT_VERSION == *"+"* ]]; then
             VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
@@ -279,10 +279,10 @@ jobs:
             fi
           fi
           
-          echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
-          echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
-          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "VERSION_PART=$VERSION_PART" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "version_part=$VERSION_PART" >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Calculate build metadata
         id: build_meta
@@ -299,8 +299,8 @@ jobs:
           BUILD_NUMBER=${{ steps.version.outputs.build_number }}
           NEW_BUILD=$((BUILD_NUMBER + 1))
           FULL_VERSION="${VERSION_PART}-${PR}+${NEW_BUILD}"
-          echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
-          echo "build_number=${NEW_BUILD}" >> $GITHUB_ENV
+          echo "FULL_VERSION=$FULL_VERSION" >> "$GITHUB_ENV"
+          echo "build_number=${NEW_BUILD}" >> "$GITHUB_ENV"
 
       - name: Update pubspec version
         run: |
@@ -327,9 +327,9 @@ jobs:
           RELEASE_NOTES="${ENV_NAME_UPPER} APK for ${PR_TITLE}.
           #${PR_NUMBER} by ${PR_AUTHOR}"
           
-          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "release_notes<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$RELEASE_NOTES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
           
           echo "📝 Generated release notes:"
           echo "$RELEASE_NOTES"

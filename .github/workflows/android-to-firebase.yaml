@@ -24,10 +24,23 @@ name: Send APK to Firebase
 # - prod: Uses production environment with no suffix
 
 on:
-  pull_request:
-    types: [ready_for_review]
   issue_comment:
     types: [created, edited]
+  pull_request:
+    types: [ready_for_review]
+  workflow_dispatch:
+    inputs:
+      env_name:
+        description: 'Select the environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      feature_name:
+        description: 'Select the feature'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -40,6 +53,7 @@ env:
 jobs:
   build-and-send:
     if: |
+      (github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' && github.event.action == 'ready_for_review') ||
       (github.event_name == 'issue_comment' && 
        github.event.issue.pull_request != null &&
@@ -50,8 +64,11 @@ jobs:
       - name: Determine environment and set secrets
         id: env_detection
         run: |
+        
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             ENV_NAME="staging"
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            ENV_NAME="${{ github.event.inputs.env_name }}"
           else
             COMMENT="${{ github.event.comment.body }}"
             if [[ "$COMMENT" == *"Build for testing: prod"* ]]; then
@@ -272,6 +289,8 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR=${{ github.event.pull_request.number }}
+          elif [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            PR="${{ github.event.inputs.feature_name }}"
           else
             PR=${{ github.event.issue.number }}
           fi

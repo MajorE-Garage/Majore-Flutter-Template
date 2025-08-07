@@ -1,0 +1,386 @@
+name: Send APK to Firebase App Distribution
+
+# Required Secrets (prefixed by environment):
+# - STAGING_FIREBASE_APP_ID: Firebase App Distribution app ID for staging
+# - PROD_FIREBASE_APP_ID: Firebase App Distribution app ID for production
+
+# - STAGING_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for staging flavor
+# - PROD_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for production flavor
+
+# - STAGING_ENV: JSON string containing staging environment variables
+# - PROD_ENV: JSON string containing production environment variables
+
+# - STAGING_KEYSTORE_BASE64: Base64 encoded keystore file for staging APK signing
+# - PROD_KEYSTORE_BASE64: Base64 encoded keystore file for production APK signing
+
+# - STAGING_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for staging flavor
+# - PROD_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for production flavor
+
+# - STAGING_KEY_PROPERTIES: Complete key.properties file content for staging signing
+# - PROD_KEY_PROPERTIES: Complete key.properties file content for production signing
+
+# Flavors:
+# - staging: Uses staging environment with .staging suffix
+# - prod: Uses production environment with no suffix
+
+on:
+  pull_request:
+    types: [ready_for_review]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+
+env:
+  flutter_version: "3.32.0"
+
+jobs:
+  build-and-send:
+    if: |
+      # Trigger on PR ready for review (defaults to staging)
+      (github.event_name == 'pull_request' && github.event.action == 'ready_for_review') ||
+      # Trigger on comment containing 'Build for testing: staging' or 'Build for testing: prod'
+      (github.event_name == 'issue_comment' && 
+       github.event.issue.pull_request != null &&
+       (contains(github.event.comment.body, 'Build for testing: staging') ||
+        contains(github.event.comment.body, 'Build for testing: prod')))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine environment and set secrets
+        id: env_detection
+        run: |
+          # Default to staging for PR ready for review
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            ENV_NAME="staging"
+          else
+            # Check comment for environment specification
+            COMMENT="${{ github.event.comment.body }}"
+            if [[ "$COMMENT" == *"Build for testing: prod"* ]]; then
+              ENV_NAME="prod"
+            elif [[ "$COMMENT" == *"Build for testing: staging"* ]]; then
+              ENV_NAME="staging"
+            else
+              # Default to staging for any other comment
+              ENV_NAME="staging"
+            fi
+          fi
+          
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific secrets
+          if [ "$ENV_NAME" == "prod" ]; then
+            echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
+            echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+          else
+            echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
+            echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
+            echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+          fi
+          
+          echo "🔧 Environment: $ENV_NAME"
+          echo "📱 Firebase App ID: $FIREBASE_APP_ID"
+
+      - name: Validate required secrets
+        run: |
+          echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
+          
+          # Check if Firebase secrets are set
+          if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
+            echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Note: GOOGLE_SERVICES_JSON is already validated above
+          
+          # Check if environment variables are set
+          if [ -z "${{ env.DART_DEFINES }}" ]; then
+            echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Validate JSON format
+          if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
+            echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if keystore is set
+          if [ -z "${{ env.KEYSTORE_BASE64 }}" ]; then
+            echo "❌ KEYSTORE_BASE64 is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if key properties are set
+          if [ -z "${{ env.KEY_PROPERTIES }}" ]; then
+            echo "❌ KEY_PROPERTIES is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if google-services.json is set
+          if [ -z "${{ env.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "❌ GOOGLE_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured for ${{ env.ENV_NAME }}"
+          echo "🌍 Environment: ${{ env.ENV_NAME }}"
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.issue.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Create Flavor Directory
+        run: |
+          mkdir -p ./android/app/src/${{ env.ENV_NAME }}
+          if [ ! -d "./android/app/src/${{ env.ENV_NAME }}" ]; then
+            echo "❌ Failed to create flavor directory"
+            exit 1
+          fi
+      
+      - name: Decode Keystore File
+        run: |
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > ./android/app/src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks
+          if [ ! -f "./android/app/src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks" ]; then
+            echo "❌ Failed to decode keystore file"
+            exit 1
+          fi
+      
+      - name: Create key.properties
+        run: |
+          echo "${{ env.KEY_PROPERTIES }}" > android/key.properties
+          if [ ! -f "android/key.properties" ]; then
+            echo "❌ Failed to create key.properties"
+            exit 1
+          fi
+      
+      - name: Update storeFile in key.properties
+        run: |
+          sed -i "s|^${{ env.ENV_NAME }}.storeFile=.*|${{ env.ENV_NAME }}.storeFile=src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks|" android/key.properties
+          if ! grep -q "^${{ env.ENV_NAME }}.storeFile=" android/key.properties; then
+            echo "❌ Failed to update storeFile in key.properties"
+            exit 1
+          fi
+
+      - name: Create google-services.json
+        run: |
+          echo "${{ env.GOOGLE_SERVICES_JSON }}" > android/app/src/${{ env.ENV_NAME }}/google-services.json
+          if [ ! -f "./android/app/src/${{ env.ENV_NAME }}/google-services.json" ]; then
+            echo "❌ Failed to create google-services.json"
+            exit 1
+          fi
+      - name: Create Dart Defines environment file
+        id: env_file
+        run: |
+          # Write environment JSON to file
+          echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
+          echo "📝 Created ${env.ENV_NAME}.env with environment variables"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutter_version }}
+
+      - name: Cache Flutter Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/build-cache
+            ~/.android/cache
+          key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle*', '**/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Read current version from pubspec.yaml
+        id: version
+        run: |
+          # Check if pubspec.yaml exists
+          if [ ! -f "pubspec.yaml" ]; then
+            echo "❌ pubspec.yaml not found"
+            exit 1
+          fi
+          
+          # Extract version from pubspec.yaml with error handling
+          VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
+          if [ -z "$VERSION_LINE" ]; then
+            echo "❌ No version line found in pubspec.yaml"
+            exit 1
+          fi
+          
+          # Extract version value and clean it
+          CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "❌ Empty version value in pubspec.yaml"
+            exit 1
+          fi
+          
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          
+          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
+          if [[ $CURRENT_VERSION == *"+"* ]]; then
+            # Split on '+' to separate version and build number
+            VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
+            BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
+            
+            # Validate version part (should be semantic version)
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+            
+            # Validate build number (should be numeric)
+            if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
+              echo "❌ Invalid build number: $BUILD_NUMBER"
+              exit 1
+            fi
+          else
+            # No build number specified, use default
+            VERSION_PART=$CURRENT_VERSION
+            BUILD_NUMBER="1"
+            
+            # Validate version part
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+          fi
+          
+          echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Calculate build metadata
+        id: build_meta
+        run: |
+          # Get PR number based on event type
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            PR=${{ github.event.pull_request.number }}
+          else
+            PR=${{ github.event.issue.number }}
+          fi
+          
+          VERSION_PART=${{ steps.version.outputs.version_part }}
+          BUILD_NUMBER=${{ steps.version.outputs.build_number }}
+          NEW_BUILD=$((BUILD_NUMBER + 1))
+          FULL_VERSION="${VERSION_PART}-${PR}+${NEW_BUILD}"
+          echo "FULL_VERSION=$FULL_VERSION" >> $GITHUB_ENV
+          echo "build_number=${NEW_BUILD}" >> $GITHUB_ENV
+
+      - name: Update pubspec version
+        run: |
+          sed -i "s/version: .*/version: ${FULL_VERSION}/" pubspec.yaml
+
+      - name: Build Android FAT APK
+        run: flutter build apk --release --flavor ${env.ENV_NAME} --build-name=${{ env.FULL_VERSION }} --build-number=${{ env.build_number }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get PR information based on event type
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            PR_NUMBER=${{ github.event.pull_request.number }}
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          else
+            PR_NUMBER=${{ github.event.issue.number }}
+            PR_TITLE="${{ github.event.issue.title }}"
+            PR_AUTHOR="${{ github.event.issue.user.login }}"
+          fi
+          
+          # Get environment name and capitalize it
+          ENV_NAME_UPPER=$(echo "${{ env.ENV_NAME }}" | tr '[:lower:]' '[:upper:]')
+          
+          # Generate release notes in the specified template
+          RELEASE_NOTES="${ENV_NAME_UPPER} APK for ${PR_TITLE}.
+          #${PR_NUMBER} by ${PR_AUTHOR}"
+          
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "📝 Generated release notes:"
+          echo "$RELEASE_NOTES"
+
+      - name: Upload to Firebase App Distribution
+        id: upload-to-firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ env.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ env.GOOGLE_SERVICES_JSON }}
+          groups: dev-testers
+          file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
+          releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
+
+      - name: Comment with download link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get PR number based on event type
+            const pr = context.eventName === 'pull_request' 
+              ? context.payload.pull_request.number 
+              : context.payload.issue.number;
+            const link = core.getInput('consoleUri') || '';
+            const env = process.env.ENV_NAME || 'staging';
+            github.rest.issues.createComment({
+              issue_number: pr,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **${env.toUpperCase()}** build uploaded! Version: **${process.env.FULL_VERSION}**\n\nDownload link: ${link}`
+            });
+        env:
+          consoleUri: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          echo "🧹 Cleaning up build artifacts..."
+          
+          # Clean Flutter build artifacts (preserves pub cache)
+          flutter clean
+          
+          # Clean Android build outputs (preserves Gradle cache)
+          cd android
+          ./gradlew clean
+          cd ..
+          
+          echo "✅ Build artifacts cleanup completed"

@@ -1,0 +1,570 @@
+name: Production App Release
+
+# Required Secrets:
+# Android Production:
+# - PROD_FIREBASE_APP_ID: Firebase App Distribution app ID for production
+# - PROD_GOOGLE_SERVICES_JSON: Google Play service account JSON (same as Firebase)
+# - PROD_GOOGLE_SERVICES_JSON: Google Play service account JSON (same as Firebase)
+# - PROD_ANDROID_PACKAGE_NAME: Android package name for production
+# - PROD_ENV: Production environment variables (JSON)
+# - PROD_KEYSTORE_BASE64: Base64 encoded keystore file for production
+# - PROD_KEY_PROPERTIES: Complete key.properties for production signing
+
+# iOS Production:
+# - PROD_APP_STORE_CONNECT_ISSUER_ID: App Store Connect issuer ID
+# - PROD_APP_STORE_CONNECT_KEY_IDENTIFIER: App Store Connect key identifier
+# - PROD_APP_STORE_CONNECT_PRIVATE_KEY: App Store Connect private key
+# - PROD_CERTIFICATE_PRIVATE_KEY: iOS certificate private key
+# - PROD_APP_STORE_APP_ID: App Store Connect app ID
+# - PROD_GOOGLE_SERVICES_PLIST: Firebase GoogleService-Info.plist for iOS
+
+# Staging (for future use):
+# - STAGING_FIREBASE_APP_ID: Firebase App Distribution app ID for staging
+# - STAGING_GOOGLE_SERVICES_JSON: Google Play service account JSON for staging
+# - STAGING_GOOGLE_SERVICES_JSON: Google Play service account JSON for staging
+# - STAGING_ANDROID_PACKAGE_NAME: Android package name for staging
+# - STAGING_ENV: Staging environment variables (JSON)
+# - STAGING_KEYSTORE_BASE64: Base64 encoded keystore file for staging
+# - STAGING_KEY_PROPERTIES: Complete key.properties for staging signing
+# - STAGING_APP_STORE_CONNECT_ISSUER_ID: App Store Connect issuer ID for staging
+# - STAGING_APP_STORE_CONNECT_KEY_IDENTIFIER: App Store Connect key identifier for staging
+# - STAGING_APP_STORE_CONNECT_PRIVATE_KEY: App Store Connect private key for staging
+# - STAGING_CERTIFICATE_PRIVATE_KEY: iOS certificate private key for staging
+# - STAGING_APP_STORE_APP_ID: App Store Connect app ID for staging
+# - STAGING_GOOGLE_SERVICES_PLIST: Firebase GoogleService-Info.plist for iOS staging
+
+on:
+  pull_request:
+    branches: [prod, main]
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: read
+  id-token: write
+
+env:
+  flutter_version: "3.32.0"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:     
+  build-android:
+    name: Build Android AAB
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine environment and set secrets
+        id: env_detection
+        run: |
+
+          ENV_NAME="prod"
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific secrets
+          if [ "$ENV_NAME" == "prod" ]; then
+            echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "ANDROID_PACKAGE_NAME=${{ secrets.PROD_ANDROID_PACKAGE_NAME }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
+            echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
+          else
+            echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "ANDROID_PACKAGE_NAME=${{ secrets.STAGING_ANDROID_PACKAGE_NAME }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
+            echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
+            echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
+          fi
+          
+          echo "🔧 Environment: $ENV_NAME"
+          echo "📱 Firebase App ID: $FIREBASE_APP_ID"
+
+      - name: Validate required secrets
+        run: |
+          echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
+          
+          # Check if Firebase secrets are set
+          if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
+            echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Note: GOOGLE_SERVICES_JSON is already validated above
+          
+          # Check if environment variables are set
+          if [ -z "${{ env.DART_DEFINES }}" ]; then
+            echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Validate JSON format
+          if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
+            echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if keystore is set
+          if [ -z "${{ env.KEYSTORE_BASE64 }}" ]; then
+            echo "❌ KEYSTORE_BASE64 is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if key properties are set
+          if [ -z "${{ env.KEY_PROPERTIES }}" ]; then
+            echo "❌ KEY_PROPERTIES is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if google-services.json is set
+          if [ -z "${{ env.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "❌ GOOGLE_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if android package name is set
+          if [ -z "${{ env.ANDROID_PACKAGE_NAME }}" ]; then
+            echo "❌ ANDROID_PACKAGE_NAME is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Check if Firebase App ID is set (for future use)
+          if [ -z "${{ env.FIREBASE_APP_ID }}" ]; then
+            echo "❌ FIREBASE_APP_ID is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          echo "✅ All required secrets are configured for ${{ env.ENV_NAME }}"
+          echo "🌍 Environment: ${{ env.ENV_NAME }}"
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.event.issue.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Create Flavor Directory
+        run: |
+          mkdir -p ./android/app/src/${{ env.ENV_NAME }}
+          if [ ! -d "./android/app/src/${{ env.ENV_NAME }}" ]; then
+            echo "❌ Failed to create flavor directory"
+            exit 1
+          fi
+      
+      - name: Decode Keystore File
+        run: |
+          echo "${{ env.KEYSTORE_BASE64 }}" | base64 -d > ./android/app/src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks
+          if [ ! -f "./android/app/src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks" ]; then
+            echo "❌ Failed to decode keystore file"
+            exit 1
+          fi
+      
+      - name: Create key.properties
+        run: |
+          echo "${{ env.KEY_PROPERTIES }}" > android/key.properties
+          if [ ! -f "android/key.properties" ]; then
+            echo "❌ Failed to create key.properties"
+            exit 1
+          fi
+      
+      - name: Update storeFile in key.properties
+        run: |
+          sed -i "s|^${{ env.ENV_NAME }}.storeFile=.*|${{ env.ENV_NAME }}.storeFile=src/${{ env.ENV_NAME }}/app_${{ env.ENV_NAME }}_sign.jks|" android/key.properties
+          if ! grep -q "^${{ env.ENV_NAME }}.storeFile=" android/key.properties; then
+            echo "❌ Failed to update storeFile in key.properties"
+            exit 1
+          fi
+
+      - name: Create google-services.json
+        run: |
+          echo "${{ env.GOOGLE_SERVICES_JSON }}" > android/app/src/${{ env.ENV_NAME }}/google-services.json
+          if [ ! -f "./android/app/src/${{ env.ENV_NAME }}/google-services.json" ]; then
+            echo "❌ Failed to create google-services.json"
+            exit 1
+          fi
+
+      - name: Create Dart Defines environment file
+        id: env_file
+        run: |
+          # Write environment JSON to file
+          echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
+          echo "📝 Created ${env.ENV_NAME}.env with environment variables"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutter_version }}
+
+      - name: Cache Flutter Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-pub-
+
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/build-cache
+            ~/.android/cache
+          key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/build.gradle*', '**/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-android-sdk-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Read current version from pubspec.yaml
+        id: version
+        run: |
+          # Check if pubspec.yaml exists
+          if [ ! -f "pubspec.yaml" ]; then
+            echo "❌ pubspec.yaml not found"
+            exit 1
+          fi
+          
+          # Extract version from pubspec.yaml with error handling
+          VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
+          if [ -z "$VERSION_LINE" ]; then
+            echo "❌ No version line found in pubspec.yaml"
+            exit 1
+          fi
+          
+          # Extract version value and clean it
+          CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "❌ Empty version value in pubspec.yaml"
+            exit 1
+          fi
+          
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          
+          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
+          if [[ $CURRENT_VERSION == *"+"* ]]; then
+            # Split on '+' to separate version and build number
+            VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
+            BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
+            
+            # Validate version part (should be semantic version)
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+            
+            # Validate build number (should be numeric)
+            if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
+              echo "❌ Invalid build number: $BUILD_NUMBER"
+              exit 1
+            fi
+          else
+            # No build number specified, use default
+            VERSION_PART=$CURRENT_VERSION
+            BUILD_NUMBER="1"
+            
+            # Validate version part
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+          fi
+          
+          # Increment build number
+          BUILD_NUMBER=$((BUILD_NUMBER + 1))
+          
+          # echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          # echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
+          # echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Build Android AAB
+        run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
+
+
+      - name: Upload AAB to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ env.GOOGLE_SERVICES_JSON }}
+          packageName: ${{ env.ANDROID_PACKAGE_NAME }}
+          releaseFiles: ${{ github.workspace }}/build/app/outputs/bundle/${env.ENV_NAME}Release/app-${env.ENV_NAME}-release.aab
+          track: production
+          status: draft
+          inAppUpdatePriority: 5
+          debugSymbols: ${{ github.workspace }}/symbols
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          echo "🧹 Cleaning up build artifacts..."
+          
+          # Clean Flutter build artifacts (preserves pub cache)
+          flutter clean
+          
+          # Clean Android build outputs (preserves Gradle cache)
+          cd android
+          ./gradlew clean
+          cd ..
+          
+          echo "✅ Build artifacts cleanup completed"
+  
+  build-ios:
+    name: Build iOS Client
+    runs-on: macos-14
+    steps:
+      - name: Determine environment and set secrets
+        id: env_detection
+        run: |
+          ENV_NAME="prod"
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_ENV
+          echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific secrets
+          if [ "$ENV_NAME" == "prod" ]; then
+            echo "APP_STORE_CONNECT_ISSUER_ID=${{ secrets.PROD_APP_STORE_CONNECT_ISSUER_ID }}" >> $GITHUB_ENV
+            echo "APP_STORE_CONNECT_KEY_IDENTIFIER=${{ secrets.PROD_APP_STORE_CONNECT_KEY_IDENTIFIER }}" >> $GITHUB_ENV
+            echo "APP_STORE_CONNECT_PRIVATE_KEY=${{ secrets.PROD_APP_STORE_CONNECT_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "CERTIFICATE_PRIVATE_KEY=${{ secrets.PROD_CERTIFICATE_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "APP_STORE_APP_ID=${{ secrets.PROD_APP_STORE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_PLIST=${{ secrets.PROD_GOOGLE_SERVICES_PLIST }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+          else
+            echo "APP_STORE_CONNECT_ISSUER_ID=${{ secrets.STAGING_APP_STORE_CONNECT_ISSUER_ID }}" >> $GITHUB_ENV
+            echo "APP_STORE_CONNECT_KEY_IDENTIFIER=${{ secrets.STAGING_APP_STORE_CONNECT_KEY_IDENTIFIER }}" >> $GITHUB_ENV
+            echo "APP_STORE_CONNECT_PRIVATE_KEY=${{ secrets.STAGING_APP_STORE_CONNECT_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "CERTIFICATE_PRIVATE_KEY=${{ secrets.STAGING_CERTIFICATE_PRIVATE_KEY }}" >> $GITHUB_ENV
+            echo "APP_STORE_APP_ID=${{ secrets.STAGING_APP_STORE_APP_ID }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_PLIST=${{ secrets.STAGING_GOOGLE_SERVICES_PLIST }}" >> $GITHUB_ENV
+            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
+          fi
+          
+          echo "🔧 Environment: $ENV_NAME"
+
+      - name: Validate required secrets
+        run: |
+          echo "🔍 Validating required secrets for ${{ env.ENV_NAME }} environment..."
+          
+          # Check if iOS secrets are set
+          if [ -z "${{ env.APP_STORE_CONNECT_ISSUER_ID }}" ]; then
+            echo "❌ APP_STORE_CONNECT_ISSUER_ID is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.APP_STORE_CONNECT_KEY_IDENTIFIER }}" ]; then
+            echo "❌ APP_STORE_CONNECT_KEY_IDENTIFIER is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.APP_STORE_CONNECT_PRIVATE_KEY }}" ]; then
+            echo "❌ APP_STORE_CONNECT_PRIVATE_KEY is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.CERTIFICATE_PRIVATE_KEY }}" ]; then
+            echo "❌ CERTIFICATE_PRIVATE_KEY is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.APP_STORE_APP_ID }}" ]; then
+            echo "❌ APP_STORE_APP_ID is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.GOOGLE_SERVICES_PLIST }}" ]; then
+            echo "❌ GOOGLE_SERVICES_PLIST is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          if [ -z "${{ env.DART_DEFINES }}" ]; then
+            echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          # Validate JSON format
+          if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
+            echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
+            exit 1
+          fi
+          
+          echo "✅ All required iOS secrets are configured for ${{ env.ENV_NAME }}"
+          echo "🍏 iOS Environment: ${{ env.ENV_NAME }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      
+      - name: Setup xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.1'
+      
+      - name: Cache CocoaPods dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods
+            ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Flutter setup
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutter_version }}
+          channel: 'stable'
+          cache: true
+      
+      - name: Install Codemagic CLI tools
+        run: pip install codemagic-cli-tools
+      
+      - name: Set up keychain
+        run: keychain initialize
+      
+      - name: Fetch signing files
+        run: |
+          app-store-connect fetch-signing-files $(xcode-project detect-bundle-id) \
+          --type IOS_APP_STORE \
+          --create
+
+      - name: Set up signing certificate
+        run: keychain add-certificates      
+    
+      - name: Set up code signing settings on Xcode project
+        run: xcode-project use-profiles
+      
+      - name: Create Dart Defines environment file
+        id: env_file
+        run: |
+          # Write environment JSON to file
+          echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
+          echo "📝 Created ${env.ENV_NAME}.env with environment variables"
+      
+      - name: Read current version from pubspec.yaml
+        id: version
+        run: |
+          # Check if pubspec.yaml exists
+          if [ ! -f "pubspec.yaml" ]; then
+            echo "❌ pubspec.yaml not found"
+            exit 1
+          fi
+          
+          # Extract version from pubspec.yaml with error handling
+          VERSION_LINE=$(grep -E '^version:' pubspec.yaml | head -1)
+          if [ -z "$VERSION_LINE" ]; then
+            echo "❌ No version line found in pubspec.yaml"
+            exit 1
+          fi
+          
+          # Extract version value and clean it
+          CURRENT_VERSION=$(echo "$VERSION_LINE" | sed 's/version: //' | tr -d ' ' | sed 's/#.*$//')
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "❌ Empty version value in pubspec.yaml"
+            exit 1
+          fi
+          
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          
+          # Handle pre-release versions (e.g., "1.0.0-test+1", "1.0.0-alpha+1")
+          if [[ $CURRENT_VERSION == *"+"* ]]; then
+            # Split on '+' to separate version and build number
+            VERSION_PART=$(echo $CURRENT_VERSION | cut -d'+' -f1)
+            BUILD_NUMBER=$(echo $CURRENT_VERSION | cut -d'+' -f2)
+            
+            # Validate version part (should be semantic version)
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+            
+            # Validate build number (should be numeric)
+            if ! echo "$BUILD_NUMBER" | grep -qE '^[0-9]+$'; then
+              echo "❌ Invalid build number: $BUILD_NUMBER"
+              exit 1
+            fi
+          else
+            # No build number specified, use default
+            VERSION_PART=$CURRENT_VERSION
+            BUILD_NUMBER="1"
+            
+            # Validate version part
+            if ! echo "$VERSION_PART" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$'; then
+              echo "❌ Invalid version format: $VERSION_PART"
+              exit 1
+            fi
+          fi
+          
+          # Increment build number
+          BUILD_NUMBER=$((BUILD_NUMBER + 1))
+          
+          # echo "VERSION_PART=$VERSION_PART" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          # echo "version_part=$VERSION_PART" >> $GITHUB_OUTPUT
+          # echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Build iOS IPA
+        run: flutter build ipa --release -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          # Get PR information
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          
+          # Generate release notes in the specified template
+          RELEASE_NOTES="Production IPA for ${PR_TITLE}.
+          #${PR_NUMBER} by ${PR_AUTHOR}"
+          
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "📝 Generated release notes:"
+          echo "$RELEASE_NOTES"
+    
+      - name: Publish the app to App Store Connect
+        run: |
+          APP_FILE=$(find $(pwd) -name "*.ipa")
+          WHATS_NEW="${{ steps.release_notes.outputs.release_notes }}"
+          if [ -z "$WHATS_NEW" ]; then
+            echo "Error: Release notes are empty."
+            exit 1
+          fi
+          app-store-connect publish \
+            --path "$APP_FILE" \
+            --whats-new "$WHATS_NEW"
+
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          echo "🧹 Cleaning up build artifacts..."
+          
+          # Clean Flutter build artifacts (preserves pub cache)
+          flutter clean
+          
+          echo "✅ Build artifacts cleanup completed"

@@ -333,7 +333,7 @@ jobs:
           ENV_NAME: ${{ env.ENV_NAME }}
           BUILD_NAME: ${{ env.BUILD_NAME }}
           BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
-          ENV_FILE: ${{ env.ENV_NAME }}.env
+          ENV_FILE: ${{ env.ENV_NAME }}.json
         run: flutter build apk --release --flavor $ENV_NAME --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER -t lib/main/main.dart --dart-define-from-file=$ENV_FILE
 
       # Generate release notes

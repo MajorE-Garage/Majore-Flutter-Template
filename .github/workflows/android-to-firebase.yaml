@@ -177,19 +177,23 @@ jobs:
 
 
 
-      - name: Create Dart defines environment file
-        id: env_file
+      - name: Create Dart defines JSON file
+        env:
+          ENV_NAME: ${{ env.ENV_NAME }}
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+          STAGING_ENV: ${{ secrets.STAGING_ENV }}
         run: |
-          if [ "${{ env.ENV_NAME }}" == "prod" ]; then
-            echo "${{ secrets.PROD_ENV }}" > "${{ env.ENV_NAME }}.env"
+          if [ "$ENV_NAME" == "prod" ]; then
+            echo "$PROD_ENV" > "$ENV_NAME.json"
           else
-            echo "${{ secrets.STAGING_ENV }}" > "${{ env.ENV_NAME }}.env"
+            echo "$STAGING_ENV" > "$ENV_NAME.json"
           fi
-          if [ ! -f "${{env.ENV_NAME}}.env" ]; then
-            echo "❌ Failed to create ${{env.ENV_NAME}}.env for ${{ env.ENV_NAME }}"
+
+          if [ ! -f "$ENV_NAME.json" ]; then
+            echo "❌ Failed to create $ENV_NAME.json for $ENV_NAME"
             exit 1
           fi
-          echo "✅ Created ${{env.ENV_NAME}}.env for ${{ env.ENV_NAME }}"
+          echo "✅ Created $ENV_NAME.env for $ENV_NAME"
 
       # 6. Create other required files
       - name: Setup Java 17

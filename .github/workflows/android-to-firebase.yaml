@@ -393,18 +393,21 @@ jobs:
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: dev-testers
 
-      # Debug Firebase outputs
+      # Debug all Firebase outputs to verify what's available
       - name: Debug Firebase outputs
         run: |
           echo "📝 All Firebase Distribution outputs:"
-          echo "uploadId: ${{ steps.upload-to-firebase.outputs.uploadId }}"
-          echo "downloadLink: ${{ steps.upload-to-firebase.outputs.downloadLink }}"
-          echo "consoleUri: ${{ steps.upload-to-firebase.outputs.consoleUri }}"
           echo "FIREBASE_CONSOLE_URI: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}"
+          echo "TESTING_URI: ${{ steps.upload-to-firebase.outputs.TESTING_URI }}"
+          echo "BINARY_DOWNLOAD_URI: ${{ steps.upload-to-firebase.outputs.BINARY_DOWNLOAD_URI }}"
 
-      - name: Comment with download link
+      - name: Comment with download links
         if: github.event_name != 'workflow_dispatch'
         uses: actions/github-script@v7
+        env:
+          FIREBASE_CONSOLE_URI: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}
+          TESTING_URI: ${{ steps.upload-to-firebase.outputs.TESTING_URI }}
+          BINARY_DOWNLOAD_URI: ${{ steps.upload-to-firebase.outputs.BINARY_DOWNLOAD_URI }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -413,21 +416,41 @@ jobs:
                 ? context.payload.pull_request.number 
                 : context.payload.issue.number;
               
-              // Try multiple possible output names
-              const consoleLink = '${{ steps.upload-to-firebase.outputs.consoleUri }}' || 
-                                '${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}' ||
-                                '${{ steps.upload-to-firebase.outputs.downloadLink }}' ||
-                                '';
+              // Get all Firebase links from environment
+              const { 
+                FIREBASE_CONSOLE_URI = '', 
+                TESTING_URI = '', 
+                BINARY_DOWNLOAD_URI = '',
+                ENV_NAME = 'staging',
+                BUILD_NAME = 'unknown'
+              } = process.env;
               
-              const env = process.env.ENV_NAME || 'staging';
-              const fullVersion = process.env.BUILD_NAME || 'unknown';
+              const consoleLink = FIREBASE_CONSOLE_URI;
+              const testingLink = TESTING_URI;
+              const binaryLink = BINARY_DOWNLOAD_URI;
+              const env_name = ENV_NAME;
+              const fullVersion = BUILD_NAME;
               
-              let body = `✅ **${env.toUpperCase()}** build uploaded! Version: **${fullVersion}**`;
+              let body = `✅ **${env_name.toUpperCase()}** build uploaded! Version: **${fullVersion}**\n`;
               
+              // Add Firebase Console link
               if (consoleLink && consoleLink !== '') {
-                body += `\n\n🔗 Download link: ${consoleLink}`;
-              } else {
-                body += `\n\n📱 Check Firebase App Distribution console for download link`;
+                body += `\n🔗 [View in Firebase Console](${consoleLink})`;
+              }
+              
+              // Add Tester sharing link  
+              if (testingLink && testingLink !== '') {
+                body += `\n👥 [Share with Testers](${testingLink})`;
+              }
+              
+              // Add binary download link (with expiry note)
+              if (binaryLink && binaryLink !== '') {
+                body += `\n⬇️ [Direct Download APK](${binaryLink}) *(expires in 1 hour)*`;
+              }
+              
+              // Fallback if no links available
+              if (!consoleLink && !testingLink && !binaryLink) {
+                body += `\n\n📱 Check Firebase App Distribution console for download links`;
               }
               
               await github.rest.issues.createComment({
@@ -438,10 +461,13 @@ jobs:
               });
               
               console.log('✅ Comment posted successfully');
-              console.log('📱 Console link used:', consoleLink);
+              console.log('📱 Links used:');
+              console.log('  Console:', consoleLink ? 'Available' : 'Missing');
+              console.log('  Testing:', testingLink ? 'Available' : 'Missing');
+              console.log('  Binary:', binaryLink ? 'Available' : 'Missing');
             } catch (error) {
               console.log('❌ Failed to post comment:', error.message);
-              console.log('📱 Build info: Environment=' + process.env.ENV_NAME + ', Version=' + process.env.BUILD_NAME);
+              console.log('📱 Build info: Environment=' + ENV_NAME + ', Version=' + BUILD_NAME);
               // Don't fail the workflow if comment posting fails
             }
 

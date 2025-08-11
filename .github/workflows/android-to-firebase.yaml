@@ -393,6 +393,15 @@ jobs:
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: dev-testers
 
+      # Debug Firebase outputs
+      - name: Debug Firebase outputs
+        run: |
+          echo "📝 All Firebase Distribution outputs:"
+          echo "uploadId: ${{ steps.upload-to-firebase.outputs.uploadId }}"
+          echo "downloadLink: ${{ steps.upload-to-firebase.outputs.downloadLink }}"
+          echo "consoleUri: ${{ steps.upload-to-firebase.outputs.consoleUri }}"
+          echo "FIREBASE_CONSOLE_URI: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}"
+
       - name: Comment with download link
         if: github.event_name != 'workflow_dispatch'
         uses: actions/github-script@v7
@@ -403,25 +412,38 @@ jobs:
               const pr = context.eventName === 'pull_request' 
                 ? context.payload.pull_request.number 
                 : context.payload.issue.number;
-              const link = core.getInput('consoleUri') || '';
+              
+              // Try multiple possible output names
+              const consoleLink = '${{ steps.upload-to-firebase.outputs.consoleUri }}' || 
+                                '${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}' ||
+                                '${{ steps.upload-to-firebase.outputs.downloadLink }}' ||
+                                '';
+              
               const env = process.env.ENV_NAME || 'staging';
               const fullVersion = process.env.BUILD_NAME || 'unknown';
+              
+              let body = `✅ **${env.toUpperCase()}** build uploaded! Version: **${fullVersion}**`;
+              
+              if (consoleLink && consoleLink !== '') {
+                body += `\n\n🔗 Download link: ${consoleLink}`;
+              } else {
+                body += `\n\n📱 Check Firebase App Distribution console for download link`;
+              }
               
               await github.rest.issues.createComment({
                 issue_number: pr,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `✅ **${env.toUpperCase()}** build uploaded! Version: **${fullVersion}**\n\nDownload link: ${link}`
+                body: body
               });
               
               console.log('✅ Comment posted successfully');
+              console.log('📱 Console link used:', consoleLink);
             } catch (error) {
               console.log('❌ Failed to post comment:', error.message);
               console.log('📱 Build info: Environment=' + process.env.ENV_NAME + ', Version=' + process.env.BUILD_NAME);
               // Don't fail the workflow if comment posting fails
             }
-        env:
-          consoleUri: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}
 
       # Cleanup
       - name: Cleanup build artifacts

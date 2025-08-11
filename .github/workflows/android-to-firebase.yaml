@@ -275,7 +275,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ env.CLOUD_SERVICES_JSON }}
+          credentials_json: ${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
       
       - name: Make flutterfire-config script executable
@@ -393,7 +393,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ env.CLOUD_SERVICES_JSON }}
+          serviceCredentialsFileContent: ${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: testers

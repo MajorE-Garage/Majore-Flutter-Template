@@ -97,6 +97,7 @@ jobs:
           if [ "${{ env.ENV_NAME }}" == "prod" ]; then
             {
               echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}"
+              echo "FIREBASE_PROJECT_ID=${{ secrets.PROD_FIREBASE_PROJECT_ID }}"
               echo "KEYSTORE_BASE64<<EOF"
               echo "${{ secrets.PROD_KEYSTORE_BASE64 }}"
               echo "EOF"
@@ -110,6 +111,7 @@ jobs:
           else
             {
               echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}"
+              echo "FIREBASE_PROJECT_ID=${{ secrets.STAGING_FIREBASE_PROJECT_ID }}"
               echo "KEYSTORE_BASE64<<EOF"
               echo "${{ secrets.STAGING_KEYSTORE_BASE64 }}"
               echo "EOF"
@@ -262,9 +264,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+
+      # 8. Generate Firebase configuration
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+      
+      - name: Install FlutterFire CLI
+        run: dart pub global activate flutterfire_cli
+      
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ env.CLOUD_SERVICES_JSON }}
+          project_id: ${{ env.FIREBASE_PROJECT_ID }}
+      
+      - name: Make flutterfire-config script executable
+        run: chmod +x ./flutterfire-config
+      
+      - name: Generate Firebase configuration
+        run: ./flutterfire-config ${{ env.ENV_NAME }} release
+      
       - name: Install dependencies
         run: flutter pub get
-      
+     
       # Parse and prep new version number
       - name: Read current version from pubspec.yaml
         id: version

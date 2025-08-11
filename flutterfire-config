@@ -1,33 +1,90 @@
 #!/bin/bash
 # Script to generate Firebase configuration files for different environments/flavors
-# Feel free to reuse and adapt this script for your own projects
+# Fully automated for CI/CD use - no interactive prompts
 
-if [[ $# -eq 0 ]]; then
-  echo "Error: No environment specified. Use 'staging', or 'prod'."
+if [[ $# -lt 2 ]]; then
+  echo "Error: Missing parameters. Usage: $0 <environment> <build_config>"
+  echo "  environment: 'staging' or 'prod'"
+  echo "  build_config: 'debug' or 'release'"
+  echo ""
+  echo "Examples:"
+  echo "  $0 staging debug    # Debug-Staging"
+  echo "  $0 staging release  # Release-Staging"
+  echo "  $0 prod debug       # Debug-Prod"
+  echo "  $0 prod release     # Release-Prod"
   exit 1
 fi
 
-case $1 in
+ENVIRONMENT=$1
+BUILD_CONFIG=$2
+
+# Validate environment
+if [[ "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "prod" ]]; then
+  echo "Error: Invalid environment '$ENVIRONMENT'. Use 'staging' or 'prod'."
+  exit 1
+fi
+
+# Validate build config
+if [[ "$BUILD_CONFIG" != "debug" && "$BUILD_CONFIG" != "release" ]]; then
+  echo "Error: Invalid build config '$BUILD_CONFIG'. Use 'debug' or 'release'."
+  exit 1
+fi
+
+# Create build config suffix for iOS (capitalize first letter)
+capitalize() {
+  echo "$(tr '[:lower:]' '[:upper:]' <<< ${1:0:1})${1:1}"
+}
+
+BUILD_CONFIG_CAP=$(capitalize "$BUILD_CONFIG")
+ENVIRONMENT_CAP=$(capitalize "$ENVIRONMENT")
+IOS_BUILD_CONFIG="${BUILD_CONFIG_CAP}-${ENVIRONMENT_CAP}"
+
+case $ENVIRONMENT in
   staging)
+    echo "Generating Firebase config for ${BUILD_CONFIG_CAP} ${ENVIRONMENT_CAP} environment..."
     flutterfire config \
       --project=majore-template \
+      --platforms=ios,android \
       --out=lib/main/firebase_options_staging.dart \
       --ios-bundle-id=com.majore.template.staging \
       --ios-out=ios/flavors/staging/GoogleService-Info.plist \
+      --ios-build-config=$IOS_BUILD_CONFIG \
       --android-package-name=com.majore.template.staging \
-      --android-out=android/app/src/staging/google-services.json
+      --android-out=android/app/src/staging/google-services.json \
+      --yes
     ;;
   prod)
+    echo "Generating Firebase config for ${BUILD_CONFIG_CAP} ${ENVIRONMENT_CAP} environment..."
     flutterfire config \
       --project=majore-template \
+      --platforms=ios,android \
       --out=lib/main/firebase_options_prod.dart \
       --ios-bundle-id=com.majore.template.staging \
       --ios-out=ios/flavors/prod/GoogleService-Info.plist \
+      --ios-build-config=$IOS_BUILD_CONFIG \
       --android-package-name=com.majore.template.staging \
-      --android-out=android/app/src/prod/google-services.json
-    ;;
-  *)
-    echo "Error: Invalid environment specified. Use 'staging', or 'prod'."
-    exit 1
+      --android-out=android/app/src/prod/google-services.json \
+      --yes
     ;;
 esac
+
+# Check if the command was successful
+if [ $? -eq 0 ]; then
+  echo "✅ Firebase configuration generated successfully for ${BUILD_CONFIG_CAP} ${ENVIRONMENT_CAP} environment!"
+  echo "📁 Generated files:"
+  case $ENVIRONMENT in
+    staging)
+      echo "  - lib/main/firebase_options_staging.dart"
+      echo "  - ios/flavors/staging/GoogleService-Info.plist (Build Config: $IOS_BUILD_CONFIG)"
+      echo "  - android/app/src/staging/google-services.json"
+      ;;
+    prod)
+      echo "  - lib/main/firebase_options_prod.dart"
+      echo "  - ios/flavors/prod/GoogleService-Info.plist (Build Config: $IOS_BUILD_CONFIG)"
+      echo "  - android/app/src/prod/google-services.json"
+      ;;
+  esac
+else
+  echo "❌ Error: Failed to generate Firebase configuration for ${BUILD_CONFIG_CAP}-${ENVIRONMENT_CAP} environment"
+  exit 1
+fi

@@ -390,7 +390,7 @@ jobs:
           serviceCredentialsFileContent: ${{ env.ENV_NAME == 'prod' && secrets.PROD_CLOUD_ACCOUNT_JSON || secrets.STAGING_CLOUD_ACCOUNT_JSON }}
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
-          groups: testers
+          groups: dev-testers
 
       - name: Comment with download link
         if: github.event_name != 'workflow_dispatch'

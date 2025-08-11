@@ -104,9 +104,6 @@ jobs:
               echo "KEY_PROPERTIES<<EOF"
               echo "${{ secrets.PROD_KEY_PROPERTIES }}"
               echo "EOF"
-              echo "CLOUD_SERVICES_JSON<<EOF"
-              echo "${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}"
-              echo "EOF"
             } >> "$GITHUB_ENV"
           else
             {
@@ -117,9 +114,6 @@ jobs:
               echo "EOF"
               echo "KEY_PROPERTIES<<EOF"
               echo "${{ secrets.STAGING_KEY_PROPERTIES }}"
-              echo "EOF"
-              echo "CLOUD_SERVICES_JSON<<EOF"
-              echo "${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}"
               echo "EOF"
             } >> "$GITHUB_ENV"
           fi
@@ -275,7 +269,7 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}
+          credentials_json: ${{ env.ENV_NAME == 'prod' && secrets.PROD_CLOUD_ACCOUNT_JSON || secrets.STAGING_CLOUD_ACCOUNT_JSON }}
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
       
       - name: Make flutterfire-config script executable
@@ -356,7 +350,7 @@ jobs:
           BUILD_NAME: ${{ env.BUILD_NAME }}
           BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
           ENV_FILE: ${{ env.ENV_NAME }}.json
-        run: flutter build apk --release --flavor $ENV_NAME --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER -t lib/main/main.dart --dart-define-from-file=$ENV_FILE
+        run: flutter build apk --release --flavor $ENV_NAME --build-name=$BUILD_NAME --build-number=$BUILD_NUMBER -t lib/main/main_$ENV_NAME.dart --dart-define-from-file=$ENV_FILE
 
       # Generate release notes
       - name: Generate release notes
@@ -393,7 +387,7 @@ jobs:
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ env.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}
+          serviceCredentialsFileContent: ${{ env.ENV_NAME == 'prod' && secrets.PROD_CLOUD_ACCOUNT_JSON || secrets.STAGING_CLOUD_ACCOUNT_JSON }}
           file: build/app/outputs/flutter-apk/app-${{ env.ENV_NAME }}-release.apk
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: testers

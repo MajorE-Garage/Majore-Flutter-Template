@@ -271,7 +271,7 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
          
       - name: Build Android AAB
-        run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
+        run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main_${env.ENV_NAME}.dart --dart-define-from-file=${env.ENV_NAME}.env
 
 
       - name: Upload AAB to Google Play
@@ -478,7 +478,7 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
       - name: Build iOS IPA
-        run: flutter build ipa --release -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
+        run: flutter build ipa --release -t lib/main/main_${env.ENV_NAME}.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
 
       - name: Generate release notes
         id: release_notes

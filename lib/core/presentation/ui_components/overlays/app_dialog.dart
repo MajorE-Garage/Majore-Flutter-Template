@@ -21,7 +21,7 @@ class AppDialog<T> extends StatelessWidget {
   Future<T?> show({BuildContext? context, String? routeName}) async {
     final ctx = context ?? AppNavigator.main.currentContext;
     final value = await AppNavigator.of(
-      ctx
+      ctx,
     ).openDialog<T>(dialog: this, barrierDismissable: isDismissable, routeName: routeName);
     return value;
   }

@@ -8,7 +8,7 @@
             "name": "Staging-Debug",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main/main.dart",
+            "program": "lib/main/main_staging.dart",
             "args": [
                 "--flavor",
                 "staging",
@@ -20,7 +20,7 @@
             "name": "Prod-Debug",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main/main.dart",
+            "program": "lib/main/main_prod.dart",
             "args": [
                 "--flavor",
                 "prod",
@@ -33,7 +33,7 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",
-            "program": "lib/main/main.dart",
+            "program": "lib/main/main_prod.dart",
             "args": [
                 "--flavor",
                 "prod",

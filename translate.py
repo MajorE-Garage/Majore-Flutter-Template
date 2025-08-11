@@ -238,14 +238,16 @@ class TranslationScript:
         if re.match(r'^[A-Z_]+$', string):
             return ExclusionReason.CONSTANT_NAME
             
-        # Skip if string contains code patterns
-        if any(char in string for char in ['(', ')', '{', '}']):
+        # Skip if string contains code patterns (but allow variable interpolation)
+        if any(char in string for char in ['(', ')']) and not ('${' in string):
+            # Debug: Check if this is a multi-line string being excluded
+            if '\n' in string:
+                self.print_colored(f"DEBUG: Multi-line string excluded as CODE_PATTERN: {string[:100]}...", Colors.YELLOW)
             return ExclusionReason.CODE_PATTERN
             
-        # Skip if string contains variable interpolation
-        if '$' in string:
-            return ExclusionReason.VARIABLE_INTERPOLATION
-            
+        # Note: We no longer exclude strings with variable interpolation ($)
+        # as these are still user-facing strings that should be translated
+        
         return None
 
     def is_string_concatenation(self, line: str) -> bool:
@@ -282,26 +284,87 @@ class TranslationScript:
 
     def extract_string_from_text_widget(self, line: str) -> Optional[str]:
         """Extract full string from Text('string') or Text("string")"""
-        # Find Text( and extract the string content
-        text_match = re.search(r'Text\(\s*([\'"])(.*?)\1\s*[\),]', line)
-        if text_match:
-            return text_match.group(2)
+        # Find Text( and extract the string content - handle variable interpolation
+        text_start = line.find('Text(')
+        if text_start == -1:
+            return None
+            
+        # Find the opening quote after Text(
+        quote_start = line.find("'", text_start)
+        if quote_start == -1:
+            quote_start = line.find('"', text_start)
+        
+        if quote_start == -1:
+            return None
+            
+        quote_char = line[quote_start]
+        
+        # Find the closing quote, accounting for escaped quotes and variable interpolation
+        i = quote_start + 1
+        while i < len(line):
+            if line[i] == quote_char and line[i-1] != '\\':
+                # Found the closing quote
+                return line[quote_start + 1:i]
+            i += 1
+        
         return None
 
     def extract_string_from_selectable_text_widget(self, line: str) -> Optional[str]:
         """Extract full string from SelectableText('string') or SelectableText("string")"""
-        # Find SelectableText( and extract the string content
-        text_match = re.search(r'SelectableText\(\s*([\'"])(.*?)\1\s*[\),]', line)
-        if text_match:
-            return text_match.group(2)
+        # Find SelectableText( and extract the string content - handle variable interpolation
+        selectable_start = line.find('SelectableText(')
+        if selectable_start == -1:
+            return None
+            
+        # Find the opening quote after SelectableText(
+        quote_start = line.find("'", selectable_start)
+        if quote_start == -1:
+            quote_start = line.find('"', selectable_start)
+        
+        if quote_start == -1:
+            return None
+            
+        quote_char = line[quote_start]
+        
+        # Find the closing quote, accounting for escaped quotes and variable interpolation
+        i = quote_start + 1
+        while i < len(line):
+            if line[i] == quote_char and line[i-1] != '\\':
+                # Found the closing quote
+                return line[quote_start + 1:i]
+            i += 1
+        
         return None
 
     def extract_string_from_tooltip_widget(self, line: str) -> Optional[str]:
         """Extract full string from Tooltip(message: 'string') or Tooltip(message: "string")"""
-        # Find Tooltip( and extract the message content
-        tooltip_match = re.search(r'Tooltip\(\s*message:\s*([\'"])(.*?)\1\s*[\),]', line)
-        if tooltip_match:
-            return tooltip_match.group(2)
+        # Find Tooltip( and extract the message content - handle variable interpolation
+        tooltip_start = line.find('Tooltip(')
+        if tooltip_start == -1:
+            return None
+            
+        message_start = line.find('message:', tooltip_start)
+        if message_start == -1:
+            return None
+            
+        # Find the opening quote after message:
+        quote_start = line.find("'", message_start)
+        if quote_start == -1:
+            quote_start = line.find('"', message_start)
+        
+        if quote_start == -1:
+            return None
+            
+        quote_char = line[quote_start]
+        
+        # Find the closing quote, accounting for escaped quotes and variable interpolation
+        i = quote_start + 1
+        while i < len(line):
+            if line[i] == quote_char and line[i-1] != '\\':
+                # Found the closing quote
+                return line[quote_start + 1:i]
+            i += 1
+        
         return None
 
     def extract_string_from_bottom_navigation_bar_item(self, line: str) -> Optional[str]:
@@ -401,10 +464,15 @@ class TranslationScript:
         if not delimiter:
             return None, start_line
         
+        self.print_colored(f"DEBUG: Extracting multi-line string with delimiter '{delimiter}' from line: {start_line_content.strip()[:100]}...", Colors.CYAN)
+        
         # Find the pattern that contains the delimiter
         patterns = [
             rf'Text\(\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}\s*\)',  # Text('''string''')
             rf'Text\(\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}\s*,',   # Text('''string''', params)
+            rf'SelectableText\(\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}\s*\)',  # SelectableText('''string''')
+            rf'SelectableText\(\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}\s*,',   # SelectableText('''string''', params)
+            rf'message:\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}',     # message: '''string'''
             rf'label:\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}',       # label: '''string'''
             rf'hint:\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}',        # hint: '''string'''
             rf'heading:\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}',     # heading: '''string'''
@@ -415,12 +483,15 @@ class TranslationScript:
             rf'prefixText:\s*{re.escape(delimiter)}(.*?){re.escape(delimiter)}',  # prefixText: '''string'''
         ]
         
-        # Try to match on the start line first
-        for pattern in patterns:
+        # Try to match on the start line first (single-line multi-line strings)
+        for i, pattern in enumerate(patterns):
             match = re.search(pattern, start_line_content, re.DOTALL)
             if match:
                 content = match.group(1).strip()
+                self.print_colored(f"DEBUG: Matched pattern {i}: {content[:100]}...", Colors.GREEN)
                 return content, start_line
+        
+        self.print_colored(f"DEBUG: No single-line pattern matched, trying multi-line extraction", Colors.YELLOW)
         
         # If not found on start line, look for multi-line strings that span multiple lines
         content_lines = []
@@ -438,10 +509,12 @@ class TranslationScript:
                     end_pos = content_after_delimiter.find(delimiter)
                     if end_pos != -1:
                         content = content_after_delimiter[:end_pos].strip()
+                        self.print_colored(f"DEBUG: Found single-line multi-line string: {content[:100]}...", Colors.GREEN)
                         return content, start_line
                 else:
                     # String continues on next lines
                     content_lines.append(content_after_delimiter)
+                    self.print_colored(f"DEBUG: String continues on next lines, starting with: {content_after_delimiter[:50]}...", Colors.CYAN)
         
         # Continue reading until we find the closing delimiter
         current_line += 1
@@ -455,20 +528,23 @@ class TranslationScript:
                     # Add content before closing delimiter
                     content_before_delimiter = line[:end_pos]
                     content_lines.append(content_before_delimiter)
+                    self.print_colored(f"DEBUG: Found closing delimiter at line {current_line + 1}", Colors.GREEN)
                     break
                 else:
                     # Delimiter in middle of line, continue
                     content_lines.append(line)
             else:
-                # Regular line, add to content
+                # No delimiter in this line, add the whole line
                 content_lines.append(line)
             
             current_line += 1
         
         if content_lines:
             content = '\n'.join(content_lines).strip()
+            self.print_colored(f"DEBUG: Successfully extracted multi-line string: {content[:100]}...", Colors.GREEN)
             return content, current_line
         
+        self.print_colored(f"DEBUG: Failed to extract multi-line string", Colors.RED)
         return None, start_line
 
     def extract_string_from_text_widget_multiline(self, lines: List[str], start_line: int) -> Tuple[Optional[str], int]:
@@ -518,13 +594,16 @@ class TranslationScript:
                 
                 # Check for multi-line string start first
                 if self.is_multiline_string_start(line):
+                    self.print_colored(f"DEBUG: Found multi-line string start at line {line_num}: {line.strip()[:50]}...", Colors.CYAN)
                     # Try to extract multi-line string
                     extracted_string, end_line = self.extract_multiline_string(lines, i)
                     
                     if extracted_string:
+                        self.print_colored(f"DEBUG: Extracted multi-line string: {extracted_string[:100]}...", Colors.GREEN)
                         # Check if it's technical
                         exclusion_reason = self.is_technical_string(extracted_string)
                         if exclusion_reason:
+                            self.print_colored(f"DEBUG: Multi-line string excluded: {exclusion_reason}", Colors.YELLOW)
                             unprocessed_results.append(UnprocessedStringLocation(
                                 string=extracted_string,
                                 file_path=file_path,
@@ -535,6 +614,7 @@ class TranslationScript:
                                 end_line_number=end_line + 1
                             ))
                         else:
+                            self.print_colored(f"DEBUG: Multi-line string will be processed", Colors.GREEN)
                             # Determine string type based on context
                             string_type = self.determine_string_type_from_context(line)
                             
@@ -549,6 +629,8 @@ class TranslationScript:
                                 is_multiline=True,
                                 end_line_number=end_line + 1
                             ))
+                    else:
+                        self.print_colored(f"DEBUG: Failed to extract multi-line string from line {line_num}", Colors.RED)
                     
                     # Skip to end of multi-line string
                     i = end_line + 1
@@ -717,6 +799,26 @@ class TranslationScript:
             
         return key
 
+    def convert_dart_interpolation_to_arb(self, string: str) -> str:
+        """Convert Dart string interpolation to ARB-compatible format"""
+        # Convert ${"variable"} to {variable}
+        # But don't convert literal braces like in 'try { } catch { }'
+        import re
+        
+        # First, escape literal braces that are not part of interpolation
+        # Pattern: ${"variable"} -> {variable}
+        # But don't convert standalone braces like { } in 'try { } catch { }'
+        
+        # Replace ${"variable"} with {variable}
+        result = re.sub(r'\$\{["\']([^"\']+)["\']\}', r'{\1}', string)
+        
+        # Escape any remaining standalone braces that are not part of interpolation
+        # This handles cases like 'try { } catch { }'
+        result = re.sub(r'(?<!\{)\{(?!\w)', r'{{', result)  # Escape opening brace
+        result = re.sub(r'\}(?!\})', r'}}', result)  # Escape closing brace
+        
+        return result
+
     def read_existing_translations(self) -> Dict[str, str]:
         """Read existing translations from base ARB file"""
         existing_translations = {}
@@ -742,8 +844,15 @@ class TranslationScript:
         if not new_strings:
             return
             
-        # Create backup
+        # Clean up any existing backup files
         backup_file = f"{self.base_arb_file}.backup"
+        if os.path.exists(backup_file):
+            try:
+                os.remove(backup_file)
+            except Exception as e:
+                self.print_colored(f"Warning: Could not remove old backup: {e}", Colors.YELLOW)
+        
+        # Create backup only if we're actually going to modify the file
         if os.path.exists(self.base_arb_file):
             import shutil
             shutil.copy2(self.base_arb_file, backup_file)
@@ -770,7 +879,9 @@ class TranslationScript:
                 key = f"{original_key}_{counter}"
                 counter += 1
             
-            arb_data[key] = string
+            # Convert Dart interpolation to ARB format
+            arb_string = self.convert_dart_interpolation_to_arb(string)
+            arb_data[key] = arb_string
             arb_data[f"@{key}"] = {
                 "description": f"Auto-generated for: {string}"
             }
@@ -780,8 +891,24 @@ class TranslationScript:
             with open(self.base_arb_file, 'w', encoding='utf-8') as f:
                 json.dump(arb_data, f, indent=2, ensure_ascii=False)
             self.print_colored(f"✅ Added {len(new_strings)} new strings to {self.base_arb_file}", Colors.GREEN)
+            
+            # Clean up backup after successful write
+            if os.path.exists(backup_file):
+                try:
+                    os.remove(backup_file)
+                    self.print_colored(f"Cleaned up backup: {backup_file}", Colors.GREEN)
+                except Exception as e:
+                    self.print_colored(f"Warning: Could not remove backup: {e}", Colors.YELLOW)
+                    
         except Exception as e:
             self.print_colored(f"Error writing ARB file: {e}", Colors.RED)
+            # Restore from backup if write failed
+            if os.path.exists(backup_file):
+                try:
+                    shutil.copy2(backup_file, self.base_arb_file)
+                    self.print_colored(f"Restored from backup after error", Colors.YELLOW)
+                except Exception as restore_error:
+                    self.print_colored(f"Error restoring from backup: {restore_error}", Colors.RED)
 
     def replace_strings_in_files(self, all_strings: List[StringLocation]) -> int:
         """Replace hardcoded strings with translation getters"""
@@ -797,8 +924,9 @@ class TranslationScript:
         # Process each file
         for file_path, string_locations in files_to_update.items():
             try:
+                # Read the file once
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()
+                    lines = f.readlines()
                 
                 # Sort by line number in reverse order to avoid line number shifts
                 string_locations.sort(key=lambda x: x.line_number, reverse=True)
@@ -808,141 +936,288 @@ class TranslationScript:
                     # Create the replacement string
                     replacement = f"context.translations.{string_loc.key_name}"
                     
-                    # Read the file line by line to make precise replacements
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        lines = f.readlines()
-                    
                     if string_loc.line_number <= len(lines):
                         if string_loc.is_multiline:
                             # Handle multi-line string replacement
+                            self.print_colored(f"DEBUG: Processing multi-line string: {string_loc.string[:50]}...", Colors.CYAN)
                             if self.replace_multiline_string(lines, string_loc, replacement):
                                 file_modified = True
                                 total_replacements += 1
+                                self.print_colored(f"DEBUG: Successfully replaced multi-line string", Colors.GREEN)
+                            else:
+                                self.print_colored(f"DEBUG: Failed to replace multi-line string", Colors.RED)
                         else:
-                            # Handle single-line string replacement (existing logic)
+                            # Handle single-line string replacement
                             line = lines[string_loc.line_number - 1]
+                            original_line = line
                             
-                            # Replace the string in the line
+                            # Create a more robust replacement system
+                            replacement_made = False
+                            
+                            # Handle different string types with more flexible patterns
                             if string_loc.string_type == StringType.TEXT_WIDGET:
                                 # Replace in Text('string') or Text("string")
-                                new_line = re.sub(
-                                    r'Text\(\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'Text({replacement})',
-                                    line
-                                )
-                                new_line = re.sub(
-                                    r'Text\(\s*[\'"]([^\'"]*)[\'"]\s*,',
-                                    f'Text({replacement},',
-                                    new_line
-                                )
-                            elif string_loc.string_type == StringType.SELECTABLE_TEXT_WIDGET:
-                                new_line = re.sub(
-                                    r'SelectableText\(\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'SelectableText({replacement})',
-                                    line
-                                )
-                                new_line = re.sub(
-                                    r'SelectableText\(\s*[\'"]([^\'"]*)[\'"]\s*,',
-                                    f'SelectableText({replacement},',
-                                    new_line
-                                )
-                            elif string_loc.string_type == StringType.TOOLTIP_WIDGET:
-                                new_line = re.sub(
-                                    r'Tooltip\(\s*message:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'Tooltip(message: {replacement})',
-                                    line
-                                )
-                                new_line = re.sub(
-                                    r'Tooltip\(\s*message:\s*[\'"]([^\'"]*)[\'"]\s*,',
-                                    f'Tooltip(message: {replacement},',
-                                    new_line
-                                )
-                            elif string_loc.string_type == StringType.BOTTOM_NAVIGATION_BAR_ITEM:
-                                new_line = re.sub(
-                                    r'BottomNavigationBarItem\(\s*label:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'BottomNavigationBarItem(label: {replacement})',
-                                    line
-                                )
-                                new_line = re.sub(
-                                    r'BottomNavigationBarItem\(\s*tooltip:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'BottomNavigationBarItem(tooltip: {replacement})',
-                                    new_line
-                                )
-                            elif string_loc.string_type == StringType.PLATFORM_MENU_ITEM:
-                                new_line = re.sub(
-                                    r'PlatformMenuItem\(\s*label:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'PlatformMenuItem(label: {replacement})',
-                                    line
-                                )
-                            elif string_loc.string_type == StringType.CONTEXT_MENU_BUTTON_ITEM:
-                                new_line = re.sub(
-                                    r'ContextMenuButtonItem\(\s*label:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'ContextMenuButtonItem(label: {replacement})',
-                                    line
-                                )
-                            elif string_loc.string_type == StringType.BUTTON_STYLE_BUTTON:
-                                new_line = re.sub(
-                                    r'ButtonStyleButton\(\s*tooltip:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'ButtonStyleButton(tooltip: {replacement})',
-                                    line
-                                )
-                            elif string_loc.string_type == StringType.TITLE_WIDGET:
-                                new_line = re.sub(
-                                    r'Title\(\s*title:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'Title(title: {replacement})',
-                                    line
-                                )
-                            elif string_loc.string_type == StringType.WIDGETS_APP:
-                                new_line = re.sub(
-                                    r'WidgetsApp\(\s*title:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'WidgetsApp(title: {replacement})',
-                                    line
-                                )
-                            elif string_loc.string_type == StringType.TEXT_SPAN:
-                                new_line = re.sub(
-                                    r'TextSpan\(\s*text:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'TextSpan(text: {replacement})',
-                                    line
-                                )
-                                new_line = re.sub(
-                                    r'TextSpan\(\s*semanticsLabel:\s*[\'"]([^\'"]*)[\'"]\s*\)',
-                                    f'TextSpan(semanticsLabel: {replacement})',
-                                    new_line
-                                )
-                            else:
-                                # Replace in property assignments
-                                property_name = string_loc.string_type.value.lower().replace(' ', '_')
-                                if string_loc.string_type == StringType.LABEL:
-                                    property_name = 'label'
-                                elif string_loc.string_type == StringType.HINT:
-                                    property_name = 'hint'
-                                elif string_loc.string_type == StringType.HEADING:
-                                    property_name = 'heading'
-                                elif string_loc.string_type == StringType.BODY:
-                                    property_name = 'body'
-                                elif string_loc.string_type == StringType.YES_LABEL:
-                                    property_name = 'yesLabel'
-                                elif string_loc.string_type == StringType.CANCEL_LABEL:
-                                    property_name = 'cancelLabel'
-                                elif string_loc.string_type == StringType.TITLE:
-                                    property_name = 'title'
-                                elif string_loc.string_type == StringType.PREFIX_TEXT:
-                                    property_name = 'prefixText'
-                                elif string_loc.string_type == StringType.BUTTON_LABEL:
-                                    property_name = 'label'
+                                patterns = [
+                                    rf'Text\(\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'Text\(\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'Text({replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
                                 
-                                # Replace the specific property
-                                pattern = rf'{property_name}\s*:\s*[\'"]([^\'"]*)[\'"]'
-                                new_line = re.sub(pattern, f'{property_name}: {replacement}', line)
-                                pattern = rf'{property_name}\s*:\s*[\'"]([^\'"]*)[\'"]\s*,'
-                                new_line = re.sub(pattern, f'{property_name}: {replacement},', new_line)
+                            elif string_loc.string_type == StringType.SELECTABLE_TEXT_WIDGET:
+                                patterns = [
+                                    rf'SelectableText\(\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'SelectableText\(\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'SelectableText({replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.TOOLTIP_WIDGET:
+                                patterns = [
+                                    rf'Tooltip\(\s*message:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'Tooltip\(\s*message:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'Tooltip(message: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.BOTTOM_NAVIGATION_BAR_ITEM:
+                                patterns = [
+                                    rf'BottomNavigationBarItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'BottomNavigationBarItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'BottomNavigationBarItem\(\s*tooltip:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'BottomNavigationBarItem\(\s*tooltip:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        if 'label:' in pattern:
+                                            new_line = re.sub(pattern, f'BottomNavigationBarItem(label: {replacement})', line)
+                                        else:
+                                            new_line = re.sub(pattern, f'BottomNavigationBarItem(tooltip: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.PLATFORM_MENU_ITEM:
+                                patterns = [
+                                    rf'PlatformMenuItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'PlatformMenuItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'PlatformMenuItem(label: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.CONTEXT_MENU_BUTTON_ITEM:
+                                patterns = [
+                                    rf'ContextMenuButtonItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'ContextMenuButtonItem\(\s*label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'ContextMenuButtonItem(label: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.BUTTON_STYLE_BUTTON:
+                                patterns = [
+                                    rf'ButtonStyleButton\(\s*tooltip:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'ButtonStyleButton\(\s*tooltip:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'ButtonStyleButton(tooltip: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.TITLE_WIDGET:
+                                patterns = [
+                                    rf'Title\(\s*title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'Title\(\s*title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'Title(title: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.WIDGETS_APP:
+                                patterns = [
+                                    rf'WidgetsApp\(\s*title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'WidgetsApp\(\s*title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'WidgetsApp(title: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.TEXT_SPAN:
+                                patterns = [
+                                    rf'TextSpan\(\s*text:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'TextSpan\(\s*text:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'TextSpan\(\s*semanticsLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                    rf'TextSpan\(\s*semanticsLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        if 'text:' in pattern:
+                                            new_line = re.sub(pattern, f'TextSpan(text: {replacement})', line)
+                                        else:
+                                            new_line = re.sub(pattern, f'TextSpan(semanticsLabel: {replacement})', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.LABEL:
+                                patterns = [
+                                    rf'label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'label: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.HINT:
+                                patterns = [
+                                    rf'hint:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'hint:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'hint: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.HEADING:
+                                patterns = [
+                                    rf'heading:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'heading:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'heading: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.BODY:
+                                patterns = [
+                                    rf'body:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'body:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'body: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.TITLE:
+                                patterns = [
+                                    rf'title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'title:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'title: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.YES_LABEL:
+                                patterns = [
+                                    rf'yesLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'yesLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'yesLabel: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.CANCEL_LABEL:
+                                patterns = [
+                                    rf'cancelLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'cancelLabel:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'cancelLabel: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.PREFIX_TEXT:
+                                patterns = [
+                                    rf'prefixText:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'prefixText:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'prefixText: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
+                                
+                            elif string_loc.string_type == StringType.BUTTON_LABEL:
+                                patterns = [
+                                    rf'label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*,',
+                                    rf'label:\s*[\'"]({re.escape(string_loc.string)})[\'"]\s*\)',
+                                ]
+                                for pattern in patterns:
+                                    if re.search(pattern, line):
+                                        new_line = re.sub(pattern, f'label: {replacement},', line)
+                                        if new_line != line:
+                                            lines[string_loc.line_number - 1] = new_line
+                                            replacement_made = True
+                                            break
                             
-                            if new_line != line:
-                                lines[string_loc.line_number - 1] = new_line
+                            if replacement_made:
                                 file_modified = True
                                 total_replacements += 1
                 
-                # Write back to file if modified
+                # Write the file back only once after all replacements
                 if file_modified:
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.writelines(lines)
@@ -1031,7 +1306,34 @@ class TranslationScript:
         if start_pos == -1:
             return False
         
-        # Replace from opening delimiter to end
+        # Check what type of widget/property this is
+        widget_type = None
+        property_name = None
+        
+        if 'Text(' in start_line_content:
+            widget_type = 'Text'
+        elif 'SelectableText(' in start_line_content:
+            widget_type = 'SelectableText'
+        elif 'Tooltip(' in start_line_content:
+            widget_type = 'Tooltip'
+        elif 'label:' in start_line_content:
+            property_name = 'label'
+        elif 'hint:' in start_line_content:
+            property_name = 'hint'
+        elif 'heading:' in start_line_content:
+            property_name = 'heading'
+        elif 'body:' in start_line_content:
+            property_name = 'body'
+        elif 'title:' in start_line_content:
+            property_name = 'title'
+        elif 'yesLabel:' in start_line_content:
+            property_name = 'yesLabel'
+        elif 'cancelLabel:' in start_line_content:
+            property_name = 'cancelLabel'
+        elif 'prefixText:' in start_line_content:
+            property_name = 'prefixText'
+        
+        # Replace the start line
         before_delimiter = start_line_content[:start_pos]
         after_delimiter = start_line_content[start_pos + len(delimiter):]
         
@@ -1041,15 +1343,28 @@ class TranslationScript:
             if end_pos != -1:
                 # String ends on same line
                 after_end = after_delimiter[end_pos + len(delimiter):]
-                new_line = f"{before_delimiter}{replacement}{after_end}"
+                if widget_type:
+                    new_line = f"{before_delimiter}{replacement}{after_end}"
+                elif property_name:
+                    new_line = f"{before_delimiter}{replacement}{after_end}"
+                else:
+                    new_line = f"{before_delimiter}{replacement}{after_end}"
                 lines[start_line] = new_line
                 return True
         
         # String spans multiple lines - replace the start line
-        new_line = f"{before_delimiter}{replacement}"
+        if widget_type:
+            # For widgets like Text('''string'''), replace with Text(context.translations.key)
+            new_line = f"{before_delimiter}{replacement})"
+        elif property_name:
+            # For properties like label: '''string''', replace with label: context.translations.key
+            new_line = f"{before_delimiter}{replacement},"
+        else:
+            new_line = f"{before_delimiter}{replacement}"
+        
         lines[start_line] = new_line
         
-        # Clear intermediate lines
+        # Clear intermediate lines (the multi-line string content)
         for i in range(start_line + 1, min(end_line + 1, len(lines))):
             lines[i] = ""
         
@@ -1088,7 +1403,14 @@ class TranslationScript:
             total_files += 1
             # self.print_colored(f"📄 Processing: {file_path}", Colors.BLUE)
             
+            # Skip generated files
+            if self.is_generated_file(str(file_path)):
+                self.print_colored(f"DEBUG: Skipping generated file: {file_path}", Colors.YELLOW)
+                continue
+            
             processed_strings, unprocessed_strings = self.find_user_facing_strings(str(file_path))
+            if processed_strings or unprocessed_strings:
+                self.print_colored(f"DEBUG: Found {len(processed_strings)} processed and {len(unprocessed_strings)} unprocessed strings in {file_path}", Colors.CYAN)
             all_strings.extend(processed_strings)
             all_unprocessed_strings.extend(unprocessed_strings)
         
@@ -1136,22 +1458,23 @@ class TranslationScript:
                 grouped_strings[reason] = []
             grouped_strings[reason].append(string_loc)
         
-        # Categories that should NOT appear in the report (they are expected to be unprocessed)
-        exclude_from_report = {
+        # Categories that should NOT appear in the report (they are expected)
+        excluded_from_report = {
             ExclusionReason.TECHNICAL_PATTERN,
             ExclusionReason.CODE_PATTERN,
             ExclusionReason.CONSTANT_NAME,
             ExclusionReason.VARIABLE_NAME,
-            ExclusionReason.SPECIAL_CHARACTERS, # Changed from SPECIAL_CHARACTERS_ONLY to SPECIAL_CHARACTERS
+            ExclusionReason.SPECIAL_CHARACTERS,
+            ExclusionReason.COMMENT_STRING,
+            ExclusionReason.GENERATED_FILE,
+            # Variable interpolation strings should now be processed, not unprocessed
+            ExclusionReason.VARIABLE_INTERPOLATION,
         }
         
         # Categories that should appear in the report (they might need manual attention)
         include_in_report = {
-            ExclusionReason.VARIABLE_INTERPOLATION,
             ExclusionReason.STRING_CONCATENATION,
             ExclusionReason.TOO_SHORT,
-            ExclusionReason.COMMENT_STRING,
-            ExclusionReason.GENERATED_FILE,
         }
         
         # Filter strings to only show those that might need manual attention
@@ -1186,9 +1509,9 @@ class TranslationScript:
                 
                 # Create clickable file path
                 file_path = string_loc.file_path
-                line_info = f"Line {string_loc.line_number}"
+                line_info = f"{string_loc.line_number}"
                 if string_loc.is_multiline:
-                    line_info = f"Lines {string_loc.line_number}-{string_loc.end_line_number}"
+                    line_info = f"{string_loc.line_number}-{string_loc.end_line_number}"
                 
                 print(f"  • \"{preview}\"")
                 print(f"    📁 {file_path}:{line_info}")
@@ -1243,6 +1566,34 @@ class TranslationScript:
         # Generate unprocessed report
         self.generate_unprocessed_report(all_unprocessed_strings)
 
+    def fix_existing_arb_strings(self) -> None:
+        """Fix existing ARB strings that have Dart interpolation syntax"""
+        if not os.path.exists(self.base_arb_file):
+            return
+            
+        try:
+            with open(self.base_arb_file, 'r', encoding='utf-8') as f:
+                arb_data = json.load(f)
+            
+            modified = False
+            for key, value in arb_data.items():
+                if not key.startswith('@') and isinstance(value, str):
+                    # Check if the string contains Dart interpolation
+                    if '${' in value and '}' in value:
+                        converted = self.convert_dart_interpolation_to_arb(value)
+                        if converted != value:
+                            arb_data[key] = converted
+                            modified = True
+                            self.print_colored(f"Fixed ARB string: {key}", Colors.YELLOW)
+            
+            if modified:
+                with open(self.base_arb_file, 'w', encoding='utf-8') as f:
+                    json.dump(arb_data, f, indent=2, ensure_ascii=False)
+                self.print_colored("✅ Fixed existing ARB strings with Dart interpolation", Colors.GREEN)
+                
+        except Exception as e:
+            self.print_colored(f"Error fixing ARB strings: {e}", Colors.RED)
+
     def run(self) -> None:
         """Main execution method"""
         self.print_colored("🚀 Automated Translation Script", Colors.BLUE)
@@ -1257,12 +1608,14 @@ class TranslationScript:
         
         # Step 3: Add new strings to ARB file
         self.print_colored("📝 Adding new strings to translations...", Colors.CYAN)
-        if new_strings:
-            self.add_strings_to_arb(new_strings)
-        else:
-            self.print_colored("ℹ️  No new strings to add", Colors.YELLOW)
+        self.add_strings_to_arb(new_strings)
         
-        # Step 4: Run flutter gen-l10n
+        # Step 4.5: Fix existing ARB strings with Dart interpolation
+        self.print_colored("🔧 Fixing existing ARB strings with Dart interpolation...", Colors.CYAN)
+        self.fix_existing_arb_strings()
+        
+        # Step 5: Generate localization files
+        self.print_colored("🔄 Generating localization files...", Colors.CYAN)
         if new_strings or all_strings:  # Run if there are new strings OR any string replacements
             success = self.run_flutter_gen_l10n()
             if not success:
@@ -1270,18 +1623,18 @@ class TranslationScript:
         else:
             self.print_colored("ℹ️  Skipping localization generation (no strings found)", Colors.YELLOW)
         
-        # Step 5: Replace strings in code
+        # Step 6: Replace strings in code
         self.print_colored("🔄 Replacing strings in code...", Colors.CYAN)
         total_replacements = self.replace_strings_in_files(all_strings)
         
-        # Step 6: Generate report
+        # Step 7: Generate report
         self.generate_report(all_strings, all_unprocessed_strings, total_files, new_strings, existing_strings, total_replacements)
         
-        # Step 7: Add TODO comments for user-facing strings that couldn't be processed
+        # Step 8: Add TODO comments for user-facing strings that couldn't be processed
         self.print_colored("📝 Adding TODO comments for unprocessed user-facing strings...", Colors.CYAN)
         self.add_todo_comments_for_unprocessed_strings(all_unprocessed_strings)
         
-        # Step 8: Final message
+        # Step 9: Final message
         self.print_colored("🎉 Translation process completed!", Colors.GREEN)
         print()
         self.print_colored("💡 Next steps:", Colors.YELLOW)
@@ -1295,7 +1648,6 @@ class TranslationScript:
         """Add Flutter-style TODO comments for user-facing strings that couldn't be processed"""
         # Categories that might be user-facing and need TODO comments
         user_facing_categories = {
-            ExclusionReason.VARIABLE_INTERPOLATION,
             ExclusionReason.STRING_CONCATENATION,
             ExclusionReason.TOO_SHORT,
         }

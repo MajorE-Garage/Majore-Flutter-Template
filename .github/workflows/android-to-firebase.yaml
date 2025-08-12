@@ -251,10 +251,10 @@ jobs:
           project_id: ${{ env.FIREBASE_PROJECT_ID }}
       
       - name: Make flutterfire-config script executable
-        run: chmod +x ./flutterfire-config
+        run: chmod +x ./tools/flutterfire-config
       
       - name: Generate Firebase configuration
-        run: ./flutterfire-config ${{ env.ENV_NAME }} release
+        run: ./tools/flutterfire-config ${{ env.ENV_NAME }} release
       
       - name: Install dependencies
         run: flutter pub get

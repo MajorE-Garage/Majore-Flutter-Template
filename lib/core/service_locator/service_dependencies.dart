@@ -20,7 +20,7 @@ import '../presentation/ui_components/overlays/app_toast_widget.dart';
 import 'service_locator.dart';
 
 class ServiceDependencies extends ServiceLocator {
-  ServiceDependencies(super.locator );
+  ServiceDependencies(super.locator);
 
   @override
   FutureOr<void> register() {
@@ -49,8 +49,7 @@ class ServiceDependencies extends ServiceLocator {
 
     locator.registerLazySingleton<AnalyticsService>(() {
       final service = AnalyticsCombinatorService([
-        FirebaseAnalyticsService(firebaseAnalytics:   FirebaseAnalytics.instance
-        ),
+        FirebaseAnalyticsService(firebaseAnalytics: FirebaseAnalytics.instance),
       ]);
       service.configure(EnvironmentConfig.isProd);
       return service;

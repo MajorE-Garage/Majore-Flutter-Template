@@ -64,8 +64,7 @@ import 'app_translations_sw.dart';
 /// be consistent with the languages listed in the AppTranslations.supportedLocales
 /// property.
 abstract class AppTranslations {
-  AppTranslations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppTranslations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -73,8 +72,7 @@ abstract class AppTranslations {
     return Localizations.of<AppTranslations>(context, AppTranslations);
   }
 
-  static const LocalizationsDelegate<AppTranslations> delegate =
-      _AppTranslationsDelegate();
+  static const LocalizationsDelegate<AppTranslations> delegate = _AppTranslationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -160,8 +158,7 @@ class _AppTranslationsDelegate extends LocalizationsDelegate<AppTranslations> {
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en', 'fr', 'sw'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en', 'fr', 'sw'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppTranslationsDelegate old) => false;

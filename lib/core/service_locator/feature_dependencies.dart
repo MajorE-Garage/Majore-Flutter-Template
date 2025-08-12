@@ -9,9 +9,10 @@ class FeatureDependencies extends ServiceLocator {
 
   @override
   FutureOr<void> register() {
-
     // Register all feature dependencies here
     locator.registerFactory<LoginVm>(() => LoginVm(authRepo: locator()));
-    locator.registerLazySingleton<AuthenticationRepo>(() => AuthenticationRepo(networkService: locator()));
+    locator.registerLazySingleton<AuthenticationRepo>(
+      () => AuthenticationRepo(networkService: locator()),
+    );
   }
 }

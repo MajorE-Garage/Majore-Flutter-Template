@@ -1,12 +1,17 @@
+# Search and replace the values below with the correct values for your app
 app_name: MajorE App
 launcher_name: MajorE App
 package_name: majore_mvvm_template
 description: "A new Flutter project."
-bundle_id_android: com.majore.app
-bundle_id_ios: com.majore.app
+bundle_id_android: com.majore.template
+bundle_id_ios: com.majore.template
 firebase_project_id_prod: majore-template
 firebase_project_id_staging: majore-template
 flutter_version: 3.32.0
+
+# Set the launcher icon for your app
+# You can use the following command to generate the launcher icon:
+# flutter pub run flutter_launcher_icons:main -f app.yaml -o
 flutter_launcher_icons:
   image_path: "assets/images/launcher_icon.png"
   android: true
@@ -19,6 +24,10 @@ flutter_launcher_icons:
   macos:
     generate: false
 
+
+# Set the splash screen for your app
+# You can use the following command to generate the splash screen:
+# flutter pub run flutter_native_splash:create --path=app.yaml
 flutter_native_splash:
   color: "#ffffff"
   image: assets/images/splash.png

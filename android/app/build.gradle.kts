@@ -53,13 +53,13 @@ android {
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".staging"
-            resValue("string", "app_name", "Majore Template App (Staging)")
+            resValue("string", "app_name", "Majore App (Staging)")
             signingConfig = signingConfigs.getByName("staging")
         }
         create("prod") {
             dimension = "env"
             applicationIdSuffix = ""
-            resValue("string", "app_name", "Majore Template App (Prod)")
+            resValue("string", "app_name", "Majore App (Prod)")
             signingConfig = signingConfigs.getByName("prod")
         }
     }

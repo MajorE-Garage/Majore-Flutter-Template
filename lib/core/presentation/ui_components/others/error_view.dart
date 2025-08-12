@@ -34,7 +34,7 @@ class ErrorView extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'The page you are looking for could not be found.',
-                style: styles.body16Regular.copyWith(color: colors.textColor.withValues(alpha: 0.7)),
+                style: styles.body16Regular.copyWith(color: colors.textColor.withValues(alpha: 179)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),

@@ -117,6 +117,7 @@ void printColored(String message, String color) {
 
 /// Print colored output with newline
 void printColoredLn(String message, String color) {
+  // ignore: avoid_print
   print('$color$message${Colors.reset}');
 }
 

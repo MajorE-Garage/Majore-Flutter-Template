@@ -76,7 +76,6 @@ class AppIconButton extends StatelessWidget {
     return InkResponse(
       onTap: onPressed != null
           ? () {
-              print(context.immediateAncestor);
               onPressed?.call();
               AnalyticsService.instance.logEvent(
                 'Icon Button Pressed',

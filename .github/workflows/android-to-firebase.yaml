@@ -1,4 +1,4 @@
-name: Send APK to Firebase
+name: Send APK to Dev Testers
 
 on:
   issue_comment:

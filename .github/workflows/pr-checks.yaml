@@ -2,7 +2,7 @@ name: PR Analysis and Auto-fix
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     types: [opened, ready_for_review, synchronize]
 
 concurrency:
@@ -23,7 +23,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      checks: write
     
     steps:
       - name: Checkout code
@@ -96,6 +95,13 @@ jobs:
           # Add all changed files
           git add .
           
+          # Check if there are actually changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit after staging files"
+            echo "changes_committed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           # Create commit message
           if [[ "${{ steps.dart_fix.outputs.fixes_applied }}" == "true" && "${{ steps.format_project.outputs.formatting_applied }}" == "true" ]]; then
             commit_msg="🤖 Auto-fix: Apply dart fixes and code formatting"
@@ -105,6 +111,7 @@ jobs:
             commit_msg="🤖 Auto-fix: Apply code formatting"
           fi
           
+          # Commit and push
           git commit -m "$commit_msg"
           git push origin ${{ github.head_ref }}
           echo "changes_committed=true" >> $GITHUB_OUTPUT
@@ -116,13 +123,20 @@ jobs:
           echo "Running dart analyze..."
           
           # Run analyze and capture output, excluding TODO comments
-          if dart analyze --fatal-infos --fatal-warnings | grep -v "TODO" > analyze_output.txt 2>&1; then
+          dart analyze --fatal-infos --fatal-warnings 2>&1 | grep -v "TODO" > analyze_output.txt
+          
+          # Count the number of issues found
+          issue_count=$(grep -c "info\|warning\|error" analyze_output.txt || echo "0")
+          echo "issue_count=$issue_count" >> $GITHUB_OUTPUT
+          
+          # Check if any issues were found
+          if [ "$issue_count" -gt 0 ]; then
+            echo "analysis_passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Analysis issues found: $issue_count"
+            cat analyze_output.txt
+          else
             echo "analysis_passed=true" >> $GITHUB_OUTPUT
             echo "✅ No analysis issues found (excluding TODOs)"
-          else
-            echo "analysis_passed=false" >> $GITHUB_OUTPUT
-            echo "❌ Analysis issues found:"
-            cat analyze_output.txt
           fi
         continue-on-error: true
       
@@ -143,12 +157,15 @@ jobs:
             );
             
             const analysisPassed = '${{ steps.analyze.outputs.analysis_passed }}' === 'true';
+            const issueCount = parseInt('${{ steps.analyze.outputs.issue_count }}') || 0;
             const fixesApplied = '${{ steps.dart_fix.outputs.fixes_applied }}' === 'true';
             const formattingApplied = '${{ steps.format_project.outputs.formatting_applied }}' === 'true';
             const changesCommitted = '${{ steps.commit_changes.outputs.changes_committed }}' === 'true';
             
             let statusIcon = analysisPassed ? '✅' : '❌';
-            let statusText = analysisPassed ? 'No analysis issues found' : 'Analysis issues detected';
+            let statusText = analysisPassed 
+              ? 'No analysis issues found' 
+              : `${issueCount} analysis issue${issueCount !== 1 ? 's' : ''} detected`;
             
             let actionsSection = '';
             if (fixesApplied || formattingApplied) {

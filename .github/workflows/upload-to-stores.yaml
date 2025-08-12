@@ -40,7 +40,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   id-token: write
 
 env:
@@ -65,20 +65,20 @@ jobs:
           
           if [ "$ENV_NAME" == "prod" ]; then
             echo "FIREBASE_APP_ID=${{ secrets.PROD_FIREBASE_APP_ID }}" >> $GITHUB_ENV
-            echo "GOOGLE_SERVICES_JSON=${{ secrets.PROD_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON_BASE64=$(printf '%s' '${{ secrets.PROD_GOOGLE_SERVICES_JSON }}' | base64 -w 0)" >> $GITHUB_ENV
             echo "ANDROID_PACKAGE_NAME=${{ secrets.PROD_ANDROID_PACKAGE_NAME }}" >> $GITHUB_ENV
-            echo "DART_DEFINES=${{ secrets.PROD_ENV }}" >> $GITHUB_ENV
+            echo "DART_DEFINES_BASE64=$(printf '%s' '${{ secrets.PROD_ENV }}' | base64 -w 0)" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.PROD_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.PROD_KEY_PROPERTIES }}" >> $GITHUB_ENV
-            echo "CLOUD_ACCOUNT_JSON=${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON_BASE64=$(printf '%s' '${{ secrets.PROD_CLOUD_ACCOUNT_JSON }}' | base64 -w 0)" >> $GITHUB_ENV
           else
             echo "FIREBASE_APP_ID=${{ secrets.STAGING_FIREBASE_APP_ID }}" >> $GITHUB_ENV
-            echo "GOOGLE_SERVICES_JSON=${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}" >> $GITHUB_ENV
+            echo "GOOGLE_SERVICES_JSON_BASE64=$(printf '%s' '${{ secrets.STAGING_GOOGLE_SERVICES_JSON }}' | base64 -w 0)" >> $GITHUB_ENV
             echo "ANDROID_PACKAGE_NAME=${{ secrets.STAGING_ANDROID_PACKAGE_NAME }}" >> $GITHUB_ENV
-            echo "DART_DEFINES=${{ secrets.STAGING_ENV }}" >> $GITHUB_ENV
+            echo "DART_DEFINES_BASE64=$(printf '%s' '${{ secrets.STAGING_ENV }}' | base64 -w 0)" >> $GITHUB_ENV
             echo "KEYSTORE_BASE64=${{ secrets.STAGING_KEYSTORE_BASE64 }}" >> $GITHUB_ENV
             echo "KEY_PROPERTIES=${{ secrets.STAGING_KEY_PROPERTIES }}" >> $GITHUB_ENV
-            echo "CLOUD_ACCOUNT_JSON=${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}" >> $GITHUB_ENV
+            echo "CLOUD_ACCOUNT_JSON_BASE64=$(printf '%s' '${{ secrets.STAGING_CLOUD_ACCOUNT_JSON }}' | base64 -w 0)" >> $GITHUB_ENV
           fi
           
           echo "🔧 Environment: $ENV_NAME"
@@ -93,13 +93,8 @@ jobs:
             exit 1
           fi
           
-          if [ -z "${{ env.DART_DEFINES }}" ]; then
+          if [ -z "${{ env.DART_DEFINES_BASE64 }}" ]; then
             echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
-            exit 1
-          fi
-          
-          if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
-            echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
@@ -113,7 +108,7 @@ jobs:
             exit 1
           fi
           
-          if [ -z "${{ env.GOOGLE_SERVICES_JSON }}" ]; then
+          if [ -z "${{ env.GOOGLE_SERVICES_JSON_BASE64 }}" ]; then
             echo "❌ GOOGLE_SERVICES_JSON is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
@@ -177,7 +172,7 @@ jobs:
 
       - name: Create google-services.json
         run: |
-          echo "${{ env.GOOGLE_SERVICES_JSON }}" > android/app/src/${{ env.ENV_NAME }}/google-services.json
+          echo "${{ env.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/src/${{ env.ENV_NAME }}/google-services.json
           if [ ! -f "./android/app/src/${{ env.ENV_NAME }}/google-services.json" ]; then
             echo "❌ Failed to create google-services.json"
             exit 1
@@ -186,7 +181,7 @@ jobs:
       - name: Create Dart Defines environment file
         id: env_file
         run: |
-          echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
+          echo "${{ env.DART_DEFINES_BASE64 }}" | base64 -d > ${env.ENV_NAME}.env
           echo "📝 Created ${env.ENV_NAME}.env with environment variables"
 
       - name: Set up Flutter
@@ -276,7 +271,7 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
          
       - name: Build Android AAB
-        run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env
+        run: flutter build appbundle --release --flavor ${env.ENV_NAME} --build-number=${{ env.BUILD_NUMBER }} -t lib/main/main_${env.ENV_NAME}.dart --dart-define-from-file=${env.ENV_NAME}.env
 
 
       - name: Upload AAB to Google Play
@@ -368,13 +363,13 @@ jobs:
             exit 1
           fi
           
-          if [ -z "${{ env.DART_DEFINES }}" ]; then
-            echo "❌ DART_DEFINES is not set for ${{ env.ENV_NAME }}"
+          if [ -z "${{ env.DART_DEFINES_BASE64 }}" ]; then
+            echo "❌ DART_DEFINES_BASE64 is not set for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
-          if ! echo "${{ env.DART_DEFINES }}" | jq . > /dev/null 2>&1; then
-            echo "❌ DART_DEFINES is not valid JSON for ${{ env.ENV_NAME }}"
+          if ! echo "${{ env.DART_DEFINES_BASE64 }}" | base64 -d | jq . > /dev/null 2>&1; then
+            echo "❌ DART_DEFINES_BASE64 is not valid base64 encoded JSON for ${{ env.ENV_NAME }}"
             exit 1
           fi
           
@@ -430,7 +425,7 @@ jobs:
       - name: Create Dart Defines environment file
         id: env_file
         run: |
-          echo "${{ env.DART_DEFINES }}" > ${env.ENV_NAME}.env
+          echo "${{ env.DART_DEFINES_BASE64 }}" | base64 -d > ${env.ENV_NAME}.env
           echo "📝 Created ${env.ENV_NAME}.env with environment variables"
       
       - name: Read current version from pubspec.yaml
@@ -483,7 +478,7 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
 
       - name: Build iOS IPA
-        run: flutter build ipa --release -t lib/main/main.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
+        run: flutter build ipa --release -t lib/main/main_${env.ENV_NAME}.dart --dart-define-from-file=${env.ENV_NAME}.env --export-options-plist=$HOME/export_options.plist --build-number=${{ env.BUILD_NUMBER }}
 
       - name: Generate release notes
         id: release_notes
@@ -521,4 +516,4 @@ jobs:
           
           flutter clean
           
-          echo "✅ Build artifacts cleanup completed"
+          echo "✅ Build artifacts cleanup completed"g

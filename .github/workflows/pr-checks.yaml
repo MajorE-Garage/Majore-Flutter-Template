@@ -1,0 +1,212 @@
+name: PR Analysis and Auto-fix
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, ready_for_review, synchronize]
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  flutter_version: "3.32.0"
+
+jobs:
+  analyze-and-fix:
+    name: Analyze, Fix, and Format Flutter Code
+    runs-on: ubuntu-latest
+    
+    # Skip if PR is draft (unless it was just marked ready for review)
+    if: github.event.pull_request.draft == false
+    
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+          ref: ${{ github.head_ref }}
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.flutter_version }}
+          channel: 'stable'
+          cache: true
+      
+      - name: Get Flutter dependencies
+        run: flutter pub get
+      
+      - name: Run dart fix
+        id: dart_fix
+        run: |
+          echo "Running dart fix..."
+          dart fix --apply
+          
+          # Check if any files were modified
+          if [[ -n $(git diff --name-only) ]]; then
+            echo "fixes_applied=true" >> $GITHUB_OUTPUT
+            echo "Files modified by dart fix:"
+            git diff --name-only
+          else
+            echo "fixes_applied=false" >> $GITHUB_OUTPUT
+            echo "No fixes applied by dart fix"
+          fi
+      
+      - name: Run format-project script
+        id: format_project
+        run: |
+          echo "Running format-project script..."
+          
+          # Check if format-project script exists in root or ./tools
+          if [[ -f "format-project" ]]; then
+            ./format-project
+            echo "Used format-project script from root"
+          elif [[ -f "tools/format-project" ]]; then
+            ./tools/format-project
+            echo "Used format-project script from tools/"
+          else
+            echo "❌ format-project script not found in root or tools/ directory"
+            exit 1
+          fi
+          
+          # Check if any files were modified by formatting
+          if [[ -n $(git diff --name-only) ]]; then
+            echo "formatting_applied=true" >> $GITHUB_OUTPUT
+            echo "Files modified by formatting:"
+            git diff --name-only
+          else
+            echo "formatting_applied=false" >> $GITHUB_OUTPUT
+            echo "No formatting changes needed"
+          fi
+      
+      - name: Commit fixes and formatting changes
+        id: commit_changes
+        if: steps.dart_fix.outputs.fixes_applied == 'true' || steps.format_project.outputs.formatting_applied == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Add all changed files
+          git add .
+          
+          # Check if there are actually changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes to commit after staging files"
+            echo "changes_committed=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Create commit message
+          if [[ "${{ steps.dart_fix.outputs.fixes_applied }}" == "true" && "${{ steps.format_project.outputs.formatting_applied }}" == "true" ]]; then
+            commit_msg="🤖 Auto-fix: Apply dart fixes and code formatting"
+          elif [[ "${{ steps.dart_fix.outputs.fixes_applied }}" == "true" ]]; then
+            commit_msg="🤖 Auto-fix: Apply dart fixes"
+          else
+            commit_msg="🤖 Auto-fix: Apply code formatting"
+          fi
+          
+          # Commit and push
+          git commit -m "$commit_msg"
+          git push origin ${{ github.head_ref }}
+          echo "changes_committed=true" >> $GITHUB_OUTPUT
+          echo "✅ Changes committed and pushed to PR branch"
+      
+      - name: Run dart analyze
+        id: analyze
+        run: |
+          echo "Running dart analyze..."
+          
+          # Run analyze and capture output, excluding TODO comments
+          dart analyze --fatal-infos --fatal-warnings 2>&1 | grep -v "TODO" > analyze_output.txt
+          
+          # Count the number of issues found (count lines that start with "   info", "   warning", or "   error")
+          issue_count=$(grep -c "^   \(info\|warning\|error\)" analyze_output.txt || echo "0")
+          echo "issue_count=$issue_count" >> $GITHUB_OUTPUT
+          
+          # Check if any issues were found
+          if [ "$issue_count" -gt 0 ]; then
+            echo "analysis_passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Analysis issues found: $issue_count"
+            cat analyze_output.txt
+          else
+            echo "analysis_passed=true" >> $GITHUB_OUTPUT
+            echo "✅ No analysis issues found (excluding TODOs)"
+          fi
+        continue-on-error: true
+      
+      - name: Create or update PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            // Find existing bot comment
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]' && 
+              comment.body.includes('## 🔍 Flutter Code Analysis Results')
+            );
+            
+            const analysisPassed = '${{ steps.analyze.outputs.analysis_passed }}' === 'true';
+            const issueCount = parseInt('${{ steps.analyze.outputs.issue_count }}') || 0;
+            const fixesApplied = '${{ steps.dart_fix.outputs.fixes_applied }}' === 'true';
+            const formattingApplied = '${{ steps.format_project.outputs.formatting_applied }}' === 'true';
+            const changesCommitted = '${{ steps.commit_changes.outputs.changes_committed }}' === 'true';
+            
+            let statusIcon = analysisPassed ? '✅' : '❌';
+            let statusText = analysisPassed 
+              ? 'No analysis issues found' 
+              : `${issueCount} analysis issue${issueCount !== 1 ? 's' : ''} detected`;
+            
+            let actionsSection = '';
+            if (fixesApplied || formattingApplied) {
+              actionsSection = '\n**Auto-fixes Applied**\n\n';
+              if (fixesApplied) actionsSection += '- Applied `dart fix` corrections\n';
+              if (formattingApplied) actionsSection += '- Applied code formatting (dart format)\n';
+              if (changesCommitted) {
+                actionsSection += '- 💾 Changes have been automatically committed to this PR branch.\n';
+              }
+            }
+            
+            const commentBody = `### 🔍 Flutter Code Analysis Results
+            
+            ${statusIcon} **${statusText}**
+            ${!analysisPassed ? '\n❌ **This PR introduces analysis issues and should not be merged until they are resolved.**' : ''}
+            ${actionsSection}
+            
+            ---
+            *Generated by the PR Analysis and Auto-fix workflow.*`;
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+      
+      - name: Block PR if analysis fails
+        if: steps.analyze.outputs.analysis_passed != 'true'
+        run: |
+          echo "❌ Analysis failed: Issues detected that are not TODO comments"
+          echo "This PR cannot be merged until all analysis issues are resolved."
+          exit 1

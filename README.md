@@ -99,11 +99,11 @@ Key features of this template include:
    - Cleans up backup files after successful operations
 
 2. **Firebase Configuration**:
-   - `flutterfire-config`: Script for setting up Firebase with CLI
+   - `tools/flutterfire-config`: Script for setting up Firebase with CLI
    - Generates Firebase configuration files for different environments
-   - Supports staging and production environments
+   - Supports staging and production environments with debug/release build configs
    - Creates platform-specific configuration files (google-services.json, GoogleService-Info.plist)
-   - Usage: `./flutterfire-config staging` or `./flutterfire-config prod`
+   - Usage: `./tools/flutterfire-config <environment> <build_config>` (e.g., `./tools/flutterfire-config staging debug`)
 
 3. **Internationalization Setup**:
    - Supports multiple languages (English, Swahili, French, Arabic)
@@ -144,24 +144,23 @@ To successfully use this template for a new project, you need to create the foll
 - iOS certificates and provisioning profiles (managed by CI/CD)
 
 **GitHub Secrets (for CI/CD workflows):**
-- `STAGING_FIREBASE_APP_ID` - Firebase App Distribution app ID for staging
-- `PROD_FIREBASE_APP_ID` - Firebase App Distribution app ID for production
-- `STAGING_GOOGLE_SERVICES_JSON` - Google Play service account JSON for staging
-- `PROD_GOOGLE_SERVICES_JSON` - Google Play service account JSON for production
-- `STAGING_ANDROID_PACKAGE_NAME` - Android package name for staging
-- `PROD_ANDROID_PACKAGE_NAME` - Android package name for production
-- `STAGING_ENV` - Staging environment variables (JSON)
-- `PROD_ENV` - Production environment variables (JSON)
-- `STAGING_KEYSTORE_BASE64` - Base64 encoded keystore for staging
-- `PROD_KEYSTORE_BASE64` - Base64 encoded keystore for production
-- `STAGING_KEY_PROPERTIES` - Key properties for staging signing
-- `PROD_KEY_PROPERTIES` - Key properties for production signing
-- `PROD_APP_STORE_CONNECT_ISSUER_ID` - App Store Connect issuer ID
-- `PROD_APP_STORE_CONNECT_KEY_IDENTIFIER` - App Store Connect key identifier
-- `PROD_APP_STORE_CONNECT_PRIVATE_KEY` - App Store Connect private key
-- `PROD_CERTIFICATE_PRIVATE_KEY` - iOS certificate private key
-- `PROD_APP_STORE_APP_ID` - App Store Connect app ID
-- `PROD_GOOGLE_SERVICES_PLIST` - Firebase GoogleService-Info.plist for iOS
+
+| Secret Name | Description | Used In |
+|-------------|-------------|---------|
+| `PROD_FIREBASE_APP_ID` \| `STAGING_FIREBASE_APP_ID` | Firebase app ID for uploading builds | Firebase builds |
+| `PROD_FIREBASE_PROJECT_ID` \| `STAGING_FIREBASE_PROJECT_ID` | Firebase project identifier for configuration | Firebase builds |
+| `PROD_CLOUD_ACCOUNT_JSON` \| `STAGING_CLOUD_ACCOUNT_JSON` | Google cloud service account JSON key for authentication | Firebase and PlayStore uploads |
+| `PROD_GOOGLE_SERVICES_JSON` \| `STAGING_GOOGLE_SERVICES_JSON` | Firebase google-services.json | Android builds |
+| `PROD_GOOGLE_SERVICES_PLIST` \| `STAGING_GOOGLE_SERVICES_PLIST` | Firebase GoogleService-info.plist | iOS builds |
+| `PROD_ENV` \| `STAGING_ENV` | Dart-define environment variables in JSON format (API URLs, app names, etc.) | All builds |
+| `PROD_KEYSTORE_BASE64` \| `STAGING_KEYSTORE_BASE64` | Base64 encoded Android keystore file for app signing | Android builds |
+| `PROD_KEY_PROPERTIES` \| `STAGING_KEY_PROPERTIES` | Android keystore configuration properties for signing | Android builds |
+| `PROD_ANDROID_PACKAGE_NAME` \| `STAGING_ANDROID_PACKAGE_NAME` | Android package name for the respective environment | Store uploads |
+| `PROD_APP_STORE_CONNECT_ISSUER_ID` \| `STAGING_APP_STORE_CONNECT_ISSUER_ID` | App Store Connect API issuer ID for iOS releases | iOS store uploads |
+| `PROD_APP_STORE_CONNECT_KEY_IDENTIFIER` \| `STAGING_APP_STORE_CONNECT_KEY_IDENTIFIER` | App Store Connect API key identifier for iOS releases | iOS store uploads |
+| `PROD_APP_STORE_CONNECT_PRIVATE_KEY` \| `STAGING_APP_STORE_CONNECT_PRIVATE_KEY` | App Store Connect API private key for iOS releases | iOS store uploads |
+| `PROD_CERTIFICATE_PRIVATE_KEY` \| `STAGING_CERTIFICATE_PRIVATE_KEY` | iOS certificate private key for code signing | iOS builds |
+| `PROD_APP_STORE_APP_ID` \| `STAGING_APP_STORE_APP_ID` | App Store Connect app ID for iOS releases | iOS store uploads |
 
 This template provides a production-ready foundation for building scalable Flutter applications with clean architecture, comprehensive tooling, and automated workflows for code quality.
 
@@ -184,8 +183,8 @@ When cloning this template for a new project, you need to update the following f
 - [ ] `ios/Runner.xcodeproj/project.pbxproj` - Update bundle identifiers and display names
 
 **Firebase Configuration:**
-- [ ] `flutterfire-config` - Update Firebase project ID and bundle IDs
-- [ ] Regenerate Firebase config files using `./flutterfire-config staging` and `./flutterfire-config prod`
+- [ ] `tools/flutterfire-config` - Update Firebase project ID and bundle IDs
+- [ ] Regenerate Firebase config files using `./tools/flutterfire-config staging debug` and `./tools/flutterfire-config prod release`
 
 **Generated Files (regenerate after changes):**
 - [ ] `lib/main/firebase_options_staging.dart` - Regenerate with new project ID
@@ -203,22 +202,7 @@ When cloning this template for a new project, you need to update the following f
 - [ ] Regenerate translations with `flutter gen-l10n`
 
 **GitHub Workflows:**
-- [ ] Configure GitHub secrets for CI/CD workflows:
-
-| Secret Name | Description |
-|-------------|-------------|
-| `PROD_ENV` \| `STAGING_ENV` | Dart defines environment variables in JSON format |
-| `PROD_FIREBASE_APP_ID` \| `STAGING_FIREBASE_APP_ID` | Firebase App Distribution app ID for Android builds |
-| `PROD_GOOGLE_SERVICES_JSON` \| `STAGING_GOOGLE_SERVICES_JSON` | Google Cloud services JSON for Firebase authentication and Play Store upload |
-| `PROD_GOOGLE_SERVICES_PLIST` \| `STAGING_GOOGLE_SERVICES_PLIST` | Google Cloud services PLIST for iOS Firebase configuration |
-| `PROD_ANDROID_PACKAGE_NAME` \| `STAGING_ANDROID_PACKAGE_NAME` | Android package names for production/staging |
-| `PROD_KEYSTORE_BASE64` \| `STAGING_KEYSTORE_BASE64` | Base64 encoded keystore files for Android app signing |
-| `PROD_KEY_PROPERTIES` \| `STAGING_KEY_PROPERTIES` | Keystore configuration properties for Android signing |
-| `PROD_APP_STORE_CONNECT_ISSUER_ID` \| `STAGING_APP_STORE_CONNECT_ISSUER_ID` | App Store Connect issuer IDs for iOS releases |
-| `PROD_APP_STORE_CONNECT_KEY_IDENTIFIER` \| `STAGING_APP_STORE_CONNECT_KEY_IDENTIFIER` | App Store Connect key identifiers for iOS releases |
-| `PROD_APP_STORE_CONNECT_PRIVATE_KEY` \| `STAGING_APP_STORE_CONNECT_PRIVATE_KEY` | App Store Connect private keys for iOS releases |
-| `PROD_APP_STORE_APP_ID` \| `STAGING_APP_STORE_APP_ID` | App Store Connect app IDs for iOS releases |
-| `PROD_CERTIFICATE_PRIVATE_KEY` \| `STAGING_CERTIFICATE_PRIVATE_KEY` | iOS certificate private keys for code signing |
+- [ ] Configure GitHub secrets for CI/CD workflows (see complete list in GitHub Secrets section above)
 
 
 
@@ -241,9 +225,30 @@ When cloning this template for a new project, you need to update the following f
 
 ### GitHub Workflows
 
-This template includes two main CI/CD workflows for automated builds and deployments:
+This template includes three main CI/CD workflows for automated builds, code quality, and deployments:
 
-#### 1. Android to Firebase App Distribution (`android-to-firebase.yaml`)
+#### 1. PR Analysis and Auto-fix (`pr-checks.yaml`)
+
+**Purpose:** Automatically analyzes code quality, applies fixes, and enforces coding standards on pull requests.
+
+**Triggers:**
+- Pull requests to `develop` or `main` branches (opened, ready for review, or synchronized)
+- Automatically cancels previous runs when new commits are pushed
+
+**Features:**
+- Runs `dart fix` to apply automatic code corrections
+- Runs code formatting using the `format-project` script
+- Performs comprehensive `dart analyze` with issue counting
+- Auto-commits fixes and formatting changes back to the PR branch
+- Posts detailed analysis results as PR comments
+- Blocks PR merging if analysis issues are found
+- Excludes TODO comments from analysis failures
+
+**Workflow Permissions:**
+- `contents: write` - For committing auto-fixes and formatting changes
+- `pull-requests: write` - For posting analysis result comments
+
+#### 2. Android to Firebase App Distribution (`android-to-firebase.yaml`)
 
 **Purpose:** Builds Android APK files and uploads them to Firebase App Distribution for testing.
 
@@ -260,12 +265,13 @@ This template includes two main CI/CD workflows for automated builds and deploym
 
 **Required GitHub Secrets:**
 - `STAGING_FIREBASE_APP_ID` / `PROD_FIREBASE_APP_ID` - Firebase app IDs
-- `STAGING_GOOGLE_SERVICES_JSON` / `PROD_GOOGLE_SERVICES_JSON` - Google cloud services json to authenticate and access firebase. Also used to upload to Playstore. 
+- `STAGING_CLOUD_ACCOUNT_JSON` / `PROD_CLOUD_ACCOUNT_JSON` - Firebase cloud account JSON for authentication and Firebase App Distribution
+- `STAGING_GOOGLE_SERVICES_JSON` / `PROD_GOOGLE_SERVICES_JSON` - Google services configuration for Android
 - `STAGING_ENV` / `PROD_ENV` - Environment variables from dart define (JSON format)
 - `STAGING_KEYSTORE_BASE64` / `PROD_KEYSTORE_BASE64` - Base64 encoded keystore files
 - `STAGING_KEY_PROPERTIES` / `PROD_KEY_PROPERTIES` - Keystore configuration
 
-#### 2. Production App Release (`upload-to-stores.yaml`)
+#### 3. Production App Release (`upload-to-stores.yaml`)
 
 **Purpose:** Builds production-ready AAB (Android) and IPA (iOS) files and uploads them to app stores.
 
@@ -304,12 +310,13 @@ This template includes two main CI/CD workflows for automated builds and deploym
 - GitHub repository with Actions enabled
 
 **Workflow Permissions:**
-- Repository contents: Read
-- Pull requests: Read
+- Repository contents: Write (for auto-fixes and commits)
+- Pull requests: Write (for PR comments and analysis results)
 - ID token: Write (for Firebase authentication)
 
 **Usage Instructions:**
 1. Set up all required GitHub secrets in repository settings
-2. Create pull requests to trigger staging builds
-3. Comment "Build for testing: staging" or "Build for testing: prod" for specific builds
-4. Merge to main/prod branches to trigger production releases
+2. Create pull requests to `develop` or `main` branches to trigger code analysis and auto-fixes
+3. Create pull requests marked as "ready for review" to trigger staging builds
+4. Comment "Build for testing: staging" or "Build for testing: prod" for specific builds
+5. Merge to main/prod branches to trigger production releases

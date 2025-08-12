@@ -117,6 +117,7 @@ void printColored(String message, String color) {
 
 /// Print colored output with newline
 void printColoredLn(String message, String color) {
+  // ignore: avoid_print
   print('$color$message${Colors.reset}');
 }
 
@@ -190,7 +191,9 @@ bool shouldExcludeFile(String filePath) {
 Map<String, dynamic>? getMultilineConcatenatedStringBlock(List<String> lines, int index) {
   // Step 1: Find the start of the block by going backwards, skipping empty lines
   int i = index;
-  while (i > 0 && lines[i].trim().isEmpty) i--;
+  while (i > 0 && lines[i].trim().isEmpty) {
+    i--;
+  }
   if (i == 0) return null;
 
   // Step 2: Check if the previous line indicates a getter/setter (ends with => or =)
@@ -543,8 +546,9 @@ bool isTechnicalPattern(String value) {
   if (RegExp(r'^[0-9]+$').hasMatch(value)) return true;
 
   // File extensions
-  if (RegExp(r'^[a-zA-Z0-9_]+\.(dart|json|yaml|yml|xml|html|css|js|ts)$').hasMatch(value))
+  if (RegExp(r'^[a-zA-Z0-9_]+\.(dart|json|yaml|yml|xml|html|css|js|ts)$').hasMatch(value)) {
     return true;
+  }
 
   // URLs
   if (RegExp(r'^[a-zA-Z0-9_]+://').hasMatch(value)) return true;

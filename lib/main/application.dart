@@ -1,12 +1,32 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
+
+import '../core/service_locator/service_locator.dart';
+import '../services/error_logging_service/error_logging_service.dart';
 import '../core/presentation/navigation/app_router.dart';
 import '../core/presentation/presentation.dart';
 import '../services/app_lifecycle_service/app_lifecycle_service.dart';
 import '../services/remote_config/remote_config_service.dart';
 import '../utilities/mixins/custom_will_pop_scope_mixin.dart';
 import 'environment_config.dart';
+
+void mainApp(FirebaseOptions options) {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await Firebase.initializeApp(options: options);
+      await ServiceLocator.registerDependencies();
+      await AppThemeManager.initialise();
+      runApp(const ThisApplication());
+    },
+    (error, stack) {
+      ErrorLogService.instance.recordError(error, stack, fatal: true);
+    },
+  );
+}
 
 class ThisApplication extends StatefulWidget {
   const ThisApplication({super.key});

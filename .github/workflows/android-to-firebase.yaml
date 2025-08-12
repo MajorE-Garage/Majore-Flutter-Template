@@ -1,28 +1,5 @@
 name: Send APK to Firebase
 
-# Required Secrets (prefixed by environment):
-# - STAGING_FIREBASE_APP_ID: Firebase App Distribution app ID for staging
-# - PROD_FIREBASE_APP_ID: Firebase App Distribution app ID for production
-
-# - STAGING_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for staging flavor
-# - PROD_GOOGLE_SERVICES_JSON: Firebase google-services.json file content for production flavor
-
-# - STAGING_ENV: JSON string containing staging environment variables
-# - PROD_ENV: JSON string containing production environment variables
-
-# - STAGING_KEYSTORE_BASE64: Base64 encoded keystore file for staging APK signing
-# - PROD_KEYSTORE_BASE64: Base64 encoded keystore file for production APK signing
-
-# - STAGING_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for staging flavor
-# - PROD_CLOUD_ACCOUNT_JSON: Firebase cloud account json file content for production flavor
-
-# - STAGING_KEY_PROPERTIES: Complete key.properties file content for staging signing
-# - PROD_KEY_PROPERTIES: Complete key.properties file content for production signing
-
-# Flavors:
-# - staging: Uses staging environment with .staging suffix
-# - prod: Uses production environment with no suffix
-
 on:
   issue_comment:
     types: [created, edited]
@@ -393,14 +370,6 @@ jobs:
           releaseNotes: ${{ steps.release_notes.outputs.release_notes }}
           groups: dev-testers
 
-      # Debug all Firebase outputs to verify what's available
-      - name: Debug Firebase outputs
-        run: |
-          echo "📝 All Firebase Distribution outputs:"
-          echo "FIREBASE_CONSOLE_URI: ${{ steps.upload-to-firebase.outputs.FIREBASE_CONSOLE_URI }}"
-          echo "TESTING_URI: ${{ steps.upload-to-firebase.outputs.TESTING_URI }}"
-          echo "BINARY_DOWNLOAD_URI: ${{ steps.upload-to-firebase.outputs.BINARY_DOWNLOAD_URI }}"
-
       - name: Comment with download links
         if: github.event_name != 'workflow_dispatch'
         uses: actions/github-script@v7
@@ -422,14 +391,15 @@ jobs:
                 TESTING_URI = '', 
                 BINARY_DOWNLOAD_URI = '',
                 ENV_NAME = 'staging',
-                BUILD_NAME = 'unknown'
+                BUILD_NAME = 'unknown', 
+                BUILD_NUMBER = ''
               } = process.env;
               
               const consoleLink = FIREBASE_CONSOLE_URI;
               const testingLink = TESTING_URI;
               const binaryLink = BINARY_DOWNLOAD_URI;
               const env_name = ENV_NAME;
-              const fullVersion = BUILD_NAME;
+              const fullVersion = BUILD_NAME + '+' + BUILD_NUMBER;
               
               let body = `✅ **${env_name.toUpperCase()}** build uploaded! Version: **${fullVersion}**\n`;
               
@@ -441,11 +411,6 @@ jobs:
               // Add Tester sharing link  
               if (testingLink && testingLink !== '') {
                 body += `\n👥 [Share with Testers](${testingLink})`;
-              }
-              
-              // Add binary download link (with expiry note)
-              if (binaryLink && binaryLink !== '') {
-                body += `\n⬇️ [Direct Download APK](${binaryLink}) *(expires in 1 hour)*`;
               }
               
               // Fallback if no links available

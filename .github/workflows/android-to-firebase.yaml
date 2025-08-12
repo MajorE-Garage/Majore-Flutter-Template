@@ -41,8 +41,7 @@ jobs:
       (github.event_name == 'pull_request' && github.event.action == 'ready_for_review') ||
       (github.event_name == 'issue_comment' && 
        github.event.issue.pull_request != null &&
-       (contains(github.event.comment.body, 'Build for testing: staging') ||
-        contains(github.event.comment.body, 'Build for testing: prod')))
+       (contains(github.event.comment.body, 'Build for testing:')))
     runs-on: ubuntu-latest
     steps:
       # 1. Determine environment and set it in GitHub environment

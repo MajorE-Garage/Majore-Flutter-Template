@@ -2,7 +2,7 @@ name: PR Analysis and Auto-fix
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, prod]
     types: [opened, ready_for_review, synchronize]
 env:
   flutter_version: "3.32.0"

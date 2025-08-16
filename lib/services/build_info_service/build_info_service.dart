@@ -9,11 +9,115 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../utilities/extensions/string_extension.dart';
 import 'device_and_app_models.dart';
 
+/// Abstract base class for build and device information services.
+///
+/// This service provides access to device, application, and locale information
+/// that can be useful for analytics, debugging, and feature customization.
+/// It abstracts the complexity of gathering platform-specific information
+/// and provides a unified interface across different platforms.
+///
+/// The service provides information about:
+/// - Device details (brand, model, platform)
+/// - Application details (version, build number, package name)
+/// - Locale details (language, country, timezone)
+/// - Update prompting capabilities
+///
+/// All information is cached after the first fetch to improve performance
+/// and avoid redundant system calls.
+///
+/// Example usage:
+/// ```dart
+/// final buildInfo = ServiceLocator.get<BuildInfoService>();
+///
+/// // Get device information
+/// final device = await buildInfo.deviceInfo;
+/// print('Device: ${device.deviceBrand} ${device.deviceModel}');
+///
+/// // Get app information
+/// final app = await buildInfo.appInfo;
+/// print('Version: ${app.versionNumber} (${app.buildNumber})');
+///
+/// // Get locale information
+/// final locale = await buildInfo.localeInfo;
+/// print('Locale: ${locale.languageCode}_${locale.countryCode}');
+/// ```
 abstract class BuildInfoService {
+  /// Retrieves device information including brand and model.
+  ///
+  /// This property provides details about the physical device the app is
+  /// running on. The information is platform-specific and includes the
+  /// device brand (manufacturer) and model name.
+  ///
+  /// The data is cached after the first fetch for performance.
+  ///
+  /// Returns a [DeviceInfoModel] containing device brand and model information.
+  ///
+  /// Example:
+  /// ```dart
+  /// final device = await buildInfo.deviceInfo;
+  /// // iOS: device.deviceBrand = "iPhone", device.deviceModel = "iPhone 14 Pro"
+  /// // Android: device.deviceBrand = "Samsung", device.deviceModel = "SM-G991B"
+  /// ```
   Future<DeviceInfoModel> get deviceInfo;
+
+  /// Retrieves application information including version and build details.
+  ///
+  /// This property provides details about the current application build,
+  /// including version number, build number, and package name. This
+  /// information is useful for analytics, debugging, and version checks.
+  ///
+  /// The data is cached after the first fetch for performance.
+  ///
+  /// Returns an [AppInfoModel] containing application version and build information.
+  ///
+  /// Example:
+  /// ```dart
+  /// final app = await buildInfo.appInfo;
+  /// // app.versionNumber = "1.2.3"
+  /// // app.buildNumber = "123"
+  /// // app.packageName = "com.example.myapp"
+  /// ```
   Future<AppInfoModel> get appInfo;
+
+  /// Retrieves locale and timezone information.
+  ///
+  /// This property provides details about the user's current locale
+  /// and timezone settings. This information is useful for localization,
+  /// analytics, and time-based features.
+  ///
+  /// The data is cached after the first fetch for performance.
+  ///
+  /// Returns a [LocaleInfoModel] containing language, country, and timezone information.
+  ///
+  /// Example:
+  /// ```dart
+  /// final locale = await buildInfo.localeInfo;
+  /// // locale.languageCode = "en"
+  /// // locale.countryCode = "US"
+  /// // locale.timezone = "America/New_York"
+  /// ```
   Future<LocaleInfoModel> get localeInfo;
 
+  /// Prompts the user to update the application.
+  ///
+  /// This method displays a native update dialog to encourage or force
+  /// the user to update the application. The behavior depends on the
+  /// [force] parameter and the platform's update mechanism.
+  ///
+  /// [context] The build context for displaying the update dialog.
+  /// [force] Whether the update should be mandatory (prevents dismissing the dialog).
+  ///
+  /// Note: The actual implementation may vary based on the update mechanism
+  /// used (App Store, Google Play, or custom update system).
+  ///
+  /// Example:
+  /// ```dart
+  /// // Prompt for optional update
+  /// buildInfo.promptUserToUpdate(context, false);
+  ///
+  /// // Force mandatory update
+  /// buildInfo.promptUserToUpdate(context, true);
+  /// ```
   void promptUserToUpdate(BuildContext context, bool force);
 }
 

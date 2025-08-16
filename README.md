@@ -1,4 +1,4 @@
-# MajorE's Flutter MVVM Template
+# Flutter MVVM Template
 
 ## 1. Template Overview
 
@@ -235,8 +235,6 @@ This template includes three main CI/CD workflows for automated builds, code qua
 | `PROD_FIREBASE_APP_ID` \| `STAGING_FIREBASE_APP_ID` | Firebase app ID for uploading builds | Firebase builds |
 | `PROD_FIREBASE_PROJECT_ID` \| `STAGING_FIREBASE_PROJECT_ID` | Firebase project identifier for configuration | Firebase builds |
 | `PROD_CLOUD_ACCOUNT_JSON` \| `STAGING_CLOUD_ACCOUNT_JSON` | Google cloud service account JSON key for authentication | Firebase and PlayStore uploads |
-| `PROD_GOOGLE_SERVICES_JSON` \| `STAGING_GOOGLE_SERVICES_JSON` | Firebase google-services.json | Android builds |
-| `PROD_GOOGLE_SERVICES_PLIST` \| `STAGING_GOOGLE_SERVICES_PLIST` | Firebase GoogleService-info.plist | iOS builds |
 | `PROD_ENV` \| `STAGING_ENV` | Dart-define environment variables in JSON format (API URLs, app names, etc.) | All builds |
 | `PROD_KEYSTORE_BASE64` \| `STAGING_KEYSTORE_BASE64` | Base64 encoded Android keystore file for app signing | Android builds |
 | `PROD_KEY_PROPERTIES` \| `STAGING_KEY_PROPERTIES` | Android keystore configuration properties for signing | Android builds |
@@ -287,7 +285,6 @@ This template includes three main CI/CD workflows for automated builds, code qua
 **Required GitHub Secrets:**
 - `STAGING_FIREBASE_APP_ID` / `PROD_FIREBASE_APP_ID` - Firebase app IDs
 - `STAGING_CLOUD_ACCOUNT_JSON` / `PROD_CLOUD_ACCOUNT_JSON` - Firebase cloud account JSON for authentication and Firebase App Distribution
-- `STAGING_GOOGLE_SERVICES_JSON` / `PROD_GOOGLE_SERVICES_JSON` - Google services configuration for Android
 - `STAGING_ENV` / `PROD_ENV` - Environment variables from dart define (JSON format)
 - `STAGING_KEYSTORE_BASE64` / `PROD_KEYSTORE_BASE64` - Base64 encoded keystore files
 - `STAGING_KEY_PROPERTIES` / `PROD_KEY_PROPERTIES` - Keystore configuration

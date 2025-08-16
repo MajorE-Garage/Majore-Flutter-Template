@@ -69,7 +69,6 @@ class AppView<T extends AppViewModel> extends StatefulWidget {
     required this.model,
     required this.builder,
     this.autoDispose = true,
-    this.child,
     this.initState,
     this.postFrameCallback,
     this.keepAlive = false,
@@ -86,13 +85,6 @@ class AppView<T extends AppViewModel> extends StatefulWidget {
   /// If true, the view model's [dispose] method will be called when this widget
   /// is disposed. This is useful for cleaning up resources like streams or timers.
   final bool autoDispose;
-
-  /// An optional child widget that can be accessed in the builder function.
-  ///
-  /// This child widget is passed to the builder function and can be used
-  /// to build the widget tree. It's typically used for providing additional
-  /// context or data to the view.
-  final Widget? child;
 
   /// An optional callback that is called during widget initialization.
   ///
@@ -115,7 +107,7 @@ class AppView<T extends AppViewModel> extends StatefulWidget {
   /// as parameters and should return a widget tree. The view model is provided
   /// through the Provider pattern, so any child widgets can access it using
   /// [Provider.of] or [Consumer].
-  final Widget Function(T vm, Widget? child) builder;
+  final Widget Function(T vm, BuildContext context) builder;
 
   /// Whether to keep the widget alive when it's not visible.
   ///
@@ -196,13 +188,12 @@ class AppViewState<T extends AppViewModel> extends State<AppView<T>>
       value: model,
       builder: (BuildContext context, Widget? child) {
         try {
-          return widget.builder(model, child);
+          return widget.builder(model, context);
         } catch (e) {
           Logger(widget.runtimeType.toString()).severe('Error in builder of AppView: $e');
           return Container();
         }
       },
-      child: widget.child,
     );
   }
 
@@ -210,9 +201,45 @@ class AppViewState<T extends AppViewModel> extends State<AppView<T>>
   bool get wantKeepAlive => widget.keepAlive;
 }
 
+/// A stateless widget that provides a convenient way to build UI using a view model.
+///
+/// This widget uses Consumer pattern to rebuild when the view model changes.
+/// It's useful when you need to access a view model within an existing widget tree
+/// that already has a Provider context set up.
+///
+/// Example usage:
+/// ```dart
+/// AppViewBuilder<LoginViewModel>(
+///   builder: (viewModel, child) => Column(
+///     children: [
+///       Text(viewModel.status),
+///       if (child != null) child,
+///     ],
+///   ),
+///   child: MyStaticWidget(),
+/// )
+/// ```
+///
+/// [T] The type of the view model that extends [AppViewModel].
 class AppViewBuilder<T extends AppViewModel> extends StatelessWidget {
+  /// Creates an [AppViewBuilder] widget.
+  ///
+  /// [key] The widget key for this widget.
+  /// [builder] The function that builds the widget tree using the view model.
+  /// [child] An optional child widget that can be passed through to the builder.
   const AppViewBuilder({super.key, required this.builder, this.child});
+
+  /// The function that builds the widget tree using the view model.
+  ///
+  /// This function receives the view model instance and an optional child widget
+  /// as parameters and should return a widget tree. The view model is obtained
+  /// from the Provider context, so this widget must be used within a Provider tree.
   final Widget Function(T vm, Widget? child) builder;
+
+  /// An optional child widget that can be passed through to the builder.
+  ///
+  /// This child is passed directly to the builder function and can be used
+  /// for optimization when part of the widget tree doesn't depend on the view model.
   final Widget? child;
   @override
   Widget build(BuildContext context) {
@@ -220,10 +247,53 @@ class AppViewBuilder<T extends AppViewModel> extends StatelessWidget {
   }
 }
 
+/// A stateless widget that provides selective rebuilding based on specific view model properties.
+///
+/// This widget uses Selector pattern to only rebuild when the selected value changes,
+/// providing performance optimization for complex view models. It's particularly useful
+/// when you only care about specific properties of a view model and want to avoid
+/// unnecessary rebuilds when other properties change.
+///
+/// Example usage:
+/// ```dart
+/// AppViewSelector<UserViewModel, String>(
+///   selector: (viewModel) => viewModel.userName,
+///   builder: (userName, child) => Text('Hello, $userName!'),
+/// )
+/// ```
+///
+/// This widget will only rebuild when the `userName` property changes, even if other
+/// properties of the `UserViewModel` are modified.
+///
+/// [T] The type of the view model that extends [AppViewModel].
+/// [E] The type of the selected value from the view model.
 class AppViewSelector<T extends AppViewModel, E extends Object> extends StatelessWidget {
+  /// Creates an [AppViewSelector] widget.
+  ///
+  /// [key] The widget key for this widget.
+  /// [selector] A function that selects a specific value from the view model.
+  /// [builder] The function that builds the widget tree using the selected value.
+  /// [child] An optional child widget that can be passed through to the builder.
   const AppViewSelector({super.key, required this.selector, required this.builder, this.child});
+
+  /// A function that selects a specific value from the view model.
+  ///
+  /// Only when this selected value changes will the widget rebuild.
+  /// This function should return a value that can be compared for equality
+  /// to determine if a rebuild is necessary.
   final E Function(T model) selector;
+
+  /// The function that builds the widget tree using the selected value.
+  ///
+  /// This function receives the selected value and an optional child widget
+  /// as parameters and should return a widget tree. It will only be called
+  /// when the selected value changes.
   final Widget Function(E value, Widget? child) builder;
+
+  /// An optional child widget that can be passed through to the builder.
+  ///
+  /// This child is passed directly to the builder function and can be used
+  /// for optimization when part of the widget tree doesn't depend on the selected value.
   final Widget? child;
   @override
   Widget build(BuildContext context) {
